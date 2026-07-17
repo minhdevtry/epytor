@@ -25,10 +25,10 @@ fork 上游 [git-xing/md-wysiwyg-editor](https://github.com/git-xing/md-wysiwyg-
 
 * [x] **`setupSelectionToolbar` 拆分** — 提取 `createFormatDropdown` / `createAlignmentDropdown` / `createTableDeleteButtons` 三个模块函数（554→277 行）
 * [x] **`initToc` 拆分** — 提取 `getHeadings` / `findHeadingElement` / `hasChildren` / `isHeadingVisible` 到模块级（406→338 行）
-* [ ] **`createImageView` 拆分** — 当前 499 行，`startCaptionEdit` / `startSrcEdit` 可提取为模块函数
+* [x] **`createImageView` 拆分** — 提取 `startToolbarInlineEdit` 通用内联编辑辅助，消除 `startCaptionEdit`/`startSrcEdit` 重复（~80 行共用），同步修复路径解析不存在的文件产生畸形 URL
 * [ ] **`resolveCustomEditor` 拆分** — [`MarkdownEditorProvider.ts:183`](../src/MarkdownEditorProvider.ts#L183)，322 行，可提取面板清理 / ViewState / 消息路由 / 文件监听为类方法
 * [ ] **顶栏 button tooltip 注入** — 用正路方案替代 MutationObserver + `requestAnimationFrame` 扫描 `.top-bar-item`
-* [ ] **魔法数字常量化** — 顶栏高度 `36`/`40`、滚动偏移 `8`、选择器 `.milkdown-top-bar` 出现 10+ 次 → 定义常量
+* [x] **魔法数字常量化** — 新增 `shared/constants.ts`，提取 25 个命名常量，替换 ~55 处硬编码数字
 * [x] **`buildTopBar` 类型安全** — 已使用 Crepe 官方上下文类型移除 `builder`、菜单项和回调中的 14 处 `as any`
 
 #### 🟡 中优先级（每次改一点，不单独排 PR）
