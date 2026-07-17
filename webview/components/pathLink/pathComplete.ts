@@ -1,6 +1,13 @@
 import { notifyGetPathSuggestions } from "@/messaging";
 import { getFileIcon } from "./fileIcons";
 import type { EditorView } from "@milkdown/kit/prose/view";
+import {
+    closeDropdown as closeDropdownState,
+    updateActiveItem,
+    type DropdownState,
+} from "@/ui/dropdownComplete";
+
+const PATH_ACTIVE_CLASS = "path-complete-item--active";
 
 // ─── 常量 ────────────────────────────────────────────────────
 const PATH_RETRIGGER_DELAY_MS = 50;
@@ -64,61 +71,32 @@ function getCodeNodeRangeFromSelection(view: EditorView): { from: number; to: nu
 }
 
 export function initPathComplete(getEditorViewFn: () => EditorView | null): void {
-    let dropdown: HTMLUListElement | null = null;
-    let activeIndex = -1;
+    const state: DropdownState = { el: null, activeIndex: -1 };
     let lastItems: SuggestionItem[] = [];
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    // 在 showDropdown 时快照 code mark 范围，避免 click 时光标位置不可靠
     let savedRange: { from: number; to: number } | null = null;
-    // 键盘导航后屏蔽 mouseover，防止 scrollIntoView 触发 mouseover 覆盖 activeIndex
     let suppressMouseover = false;
 
-    function closeDropdown(): void {
-        if (dropdown) {
-            dropdown.remove();
-            dropdown = null;
-        }
-        activeIndex = -1;
-        lastItems = [];
-        savedRange = null;
-    }
-
-    function updateActiveItem(): void {
-        if (!dropdown) { return; }
-        Array.from(dropdown.children).forEach((li, i) => {
-            const isActive = i === activeIndex;
-            li.classList.toggle("path-complete-item--active", isActive);
-            if (isActive) {
-                (li as HTMLElement).scrollIntoView({ block: "nearest" });
-            }
-        });
-    }
+    function closeDropdown(): void { closeDropdownState(state); lastItems = []; savedRange = null; }
 
     function applySelection(item: SuggestionItem): void {
         const view = getEditorViewFn();
-        if (!view) {
-            closeDropdown();
-            return;
-        }
+        if (!view) { closeDropdown(); return; }
         const range = savedRange ?? getCodeNodeRangeFromSelection(view);
-        if (!range) {
-            closeDropdown();
-            return;
-        }
+        if (!range) { closeDropdown(); return; }
         const codeMark = view.state.schema.marks["inlineCode"];
         if (!codeMark) { return; }
-        const { state } = view;
+        const { state: editorState } = view;
         view.dispatch(
-            state.tr.replaceRangeWith(
+            editorState.tr.replaceRangeWith(
                 range.from,
                 range.to,
-                state.schema.text(item.path, [codeMark.create()]),
+                editorState.schema.text(item.path, [codeMark.create()]),
             ),
         );
         view.focus();
 
         if (item.isDir) {
-            // 选择了文件夹：替换内容后自动进入该目录（50ms 等 ProseMirror DOM 更新）
             closeDropdown();
             setTimeout(() => {
                 const newCode = getActiveInlineCode();
@@ -135,7 +113,6 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
 
         lastItems = items;
 
-        // 快照当前 code mark 范围，在 click 时光标可能已移位
         const view = getEditorViewFn();
         if (view) { savedRange = getCodeNodeRangeFromSelection(view); }
 
@@ -149,12 +126,10 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
             const li = document.createElement("li");
             li.className = "path-complete-item";
 
-            // 图标
             const iconEl = document.createElement("span");
             iconEl.className = "path-complete-icon";
             iconEl.innerHTML = getFileIcon(item.path, item.isDir);
 
-            // 只显示最后一段文件名/目录名，完整路径作 title
             const lastSeg = item.path.replace(/\/$/, '').split('/').pop() ?? item.path;
             const label = document.createElement("span");
             label.className = "path-complete-label";
@@ -165,22 +140,22 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
 
             li.addEventListener("mousedown", (e) => {
                 e.preventDefault();
-                activeIndex = i;
+                state.activeIndex = i;
                 applySelection(item);
             });
             li.addEventListener("mousemove", () => { suppressMouseover = false; });
             li.addEventListener("mouseover", () => {
                 if (suppressMouseover) { return; }
-                activeIndex = i;
-                updateActiveItem();
+                state.activeIndex = i;
+                updateActiveItem(state, PATH_ACTIVE_CLASS);
             });
             ul.appendChild(li);
         });
 
         document.body.appendChild(ul);
-        dropdown = ul;
-        activeIndex = 0;
-        updateActiveItem();
+        state.el = ul;
+        state.activeIndex = 0;
+        updateActiveItem(state, PATH_ACTIVE_CLASS);
     }
 
     function triggerSuggest(code: HTMLElement): void {
@@ -209,7 +184,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
 
     // 键盘导航（capture 阶段，优先于编辑器处理）
     document.addEventListener("keydown", (e) => {
-        if (!dropdown) { return; }
+        if (!state.el) { return; }
 
         if (e.key === "Escape") {
             e.preventDefault();
@@ -221,24 +196,24 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         if (e.key === "ArrowDown") {
             e.preventDefault();
             suppressMouseover = true;
-            activeIndex = activeIndex >= lastItems.length - 1 ? 0 : activeIndex + 1;
-            updateActiveItem();
+            state.activeIndex = state.activeIndex >= lastItems.length - 1 ? 0 : state.activeIndex + 1;
+            updateActiveItem(state, PATH_ACTIVE_CLASS);
             return;
         }
 
         if (e.key === "ArrowUp") {
             e.preventDefault();
             suppressMouseover = true;
-            activeIndex = activeIndex <= 0 ? lastItems.length - 1 : activeIndex - 1;
-            updateActiveItem();
+            state.activeIndex = state.activeIndex <= 0 ? lastItems.length - 1 : state.activeIndex - 1;
+            updateActiveItem(state, PATH_ACTIVE_CLASS);
             return;
         }
 
         if (e.key === "Enter" || e.key === "Tab") {
-            if (activeIndex >= 0 && activeIndex < lastItems.length) {
+            if (state.activeIndex >= 0 && state.activeIndex < lastItems.length) {
                 e.preventDefault();
                 e.stopPropagation();
-                applySelection(lastItems[activeIndex]);
+                applySelection(lastItems[state.activeIndex]);
             }
             return;
         }
@@ -263,7 +238,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
 
     // 点击其他区域关闭下拉
     document.addEventListener("mousedown", (e) => {
-        if (dropdown && !dropdown.contains(e.target as Node)) {
+        if (state.el && !state.el.contains(e.target as Node)) {
             closeDropdown();
         }
     }, true);
