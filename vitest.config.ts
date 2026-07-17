@@ -16,6 +16,7 @@ export default defineConfig({
             include: [
                 "src/utils/**/*.ts",
                 "src/MarkdownDocument.ts",
+                "webview/i18n/**/*.ts",
                 "webview/utils/**/*.ts",
             ],
             thresholds: {

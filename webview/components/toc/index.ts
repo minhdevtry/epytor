@@ -15,6 +15,44 @@ const TOC_WIDTH = 200;
 const TOC_MIN_WIDTH = 200;
 const TOC_MAX_WIDTH = 500;
 
+/** 从 EditorView 提取所有 heading 节点 */
+function getHeadings(view: EditorView): HeadingEntry[] {
+    const headings: HeadingEntry[] = [];
+    view.state.doc.nodesBetween(0, view.state.doc.content.size, (node, pos) => {
+        if (node.type.name === "heading") {
+            headings.push({ level: node.attrs["level"] as number, text: node.textContent, pos });
+        }
+    });
+    return headings;
+}
+
+/** 根据 heading 在文档中的位置找到对应的标题 DOM 元素 */
+function findHeadingElement(view: EditorView, pos: number): HTMLElement | null {
+    const dom = view.nodeDOM(pos) as HTMLElement | null;
+    if (dom?.matches("h1,h2,h3,h4,h5,h6")) return dom;
+    const { node } = view.domAtPos(pos + 1);
+    let el: HTMLElement | null =
+        node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
+    while (el && !el.matches("h1,h2,h3,h4,h5,h6")) el = el.parentElement;
+    return el;
+}
+
+function hasChildren(headings: HeadingEntry[], index: number): boolean {
+    if (index >= headings.length - 1) return false;
+    return headings[index + 1].level > headings[index].level;
+}
+
+function isHeadingVisible(headings: HeadingEntry[], index: number, collapsed: Set<number>): boolean {
+    let ancestorLevel = headings[index].level;
+    for (let i = index - 1; i >= 0; i--) {
+        if (headings[i].level < ancestorLevel) {
+            if (collapsed.has(headings[i].pos)) return false;
+            ancestorLevel = headings[i].level;
+        }
+    }
+    return true;
+}
+
 export function initToc(getEditorView: () => EditorView | null): {
     panel: HTMLElement;
     toggle: () => void;
@@ -39,7 +77,8 @@ export function initToc(getEditorView: () => EditorView | null): {
     const collapseAllTip = applyTooltip(collapseAllBtn, t("Collapse all"), { placement: "below" });
 
     function updateCollapseBtn(): void {
-        const headings = getHeadings();
+        const view = getEditorView();
+        const headings = view ? getHeadings(view) : [];
         const anyExpanded = headings.some(
             (h, i) => hasChildren(headings, i) && !collapsedHeadings.has(h.pos),
         );
@@ -113,18 +152,17 @@ export function initToc(getEditorView: () => EditorView | null): {
     // ── 全部折叠/展开点击 ──────────────────────────────────────
     collapseAllBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const headings = getHeadings();
+        const view = getEditorView();
+        const headings = view ? getHeadings(view) : [];
         const anyExpanded = headings.some(
             (h, i) => hasChildren(headings, i) && !collapsedHeadings.has(h.pos),
         );
         if (anyExpanded) {
-            // 全部折叠
             headings.forEach((h, i) => {
                 if (hasChildren(headings, i)) collapsedHeadings.add(h.pos);
             });
             collapseAllBtn.title = t("Expand all");
         } else {
-            // 全部展开
             collapsedHeadings.clear();
             collapseAllBtn.title = t("Collapse all");
         }
@@ -132,51 +170,6 @@ export function initToc(getEditorView: () => EditorView | null): {
         updateCollapseBtn();
         refresh();
     });
-
-    // ── 从 ProseMirror 文档中提取所有 heading 节点 ────────
-    function getHeadings(): HeadingEntry[] {
-        const view = getEditorView();
-        if (!view) {
-            return [];
-        }
-        const headings: HeadingEntry[] = [];
-        view.state.doc.nodesBetween(
-            0,
-            view.state.doc.content.size,
-            (node, pos) => {
-                if (node.type.name === "heading") {
-                    headings.push({
-                        level: node.attrs["level"] as number,
-                        text: node.textContent,
-                        pos,
-                    });
-                }
-            },
-        );
-        return headings;
-    }
-
-    function hasChildren(
-        headings: HeadingEntry[],
-        index: number,
-    ): boolean {
-        if (index >= headings.length - 1) return false;
-        return headings[index + 1].level > headings[index].level;
-    }
-
-    function isHeadingVisible(
-        headings: HeadingEntry[],
-        index: number,
-    ): boolean {
-        let ancestorLevel = headings[index].level;
-        for (let i = index - 1; i >= 0; i--) {
-            if (headings[i].level < ancestorLevel) {
-                if (collapsedHeadings.has(headings[i].pos)) return false;
-                ancestorLevel = headings[i].level;
-            }
-        }
-        return true;
-    }
 
     function saveCollapsedState(): void {
         setWebviewState({
@@ -188,10 +181,10 @@ export function initToc(getEditorView: () => EditorView | null): {
     }
 
     function refresh(): void {
-        if (!isOpen) {
-            return;
-        }
-        const headings = getHeadings();
+        if (!isOpen) return;
+        const view = getEditorView();
+        if (!view) return;
+        const headings = getHeadings(view);
         list.innerHTML = "";
         if (headings.length === 0) {
             const empty = document.createElement("div");
@@ -202,13 +195,12 @@ export function initToc(getEditorView: () => EditorView | null): {
             return;
         }
         headings.forEach(({ level, text, pos }, idx) => {
-            if (!isHeadingVisible(headings, idx)) return;
+            if (!isHeadingVisible(headings, idx, collapsedHeadings)) return;
 
             const item = document.createElement("div");
             item.className = `toc-item toc-item--h${level}`;
             item.style.paddingLeft = `${(level - 1) * 12 + 8}px`;
 
-            // 折叠/展开按钮（无子项的也加占位符保持对齐）
             const hasKids = hasChildren(headings, idx);
             const toggle = document.createElement("span");
             toggle.className = "toc-collapse-toggle";
@@ -232,47 +224,25 @@ export function initToc(getEditorView: () => EditorView | null): {
             }
             item.appendChild(toggle);
 
-            // 标题文字 + 导航点击
             const label = document.createElement("span");
             label.className = "toc-item-label";
             label.textContent = text || `${t("Heading")} ${level}`;
-            applyTooltip(label, text, {
-                placement: "above",
-                truncatedOnly: true,
-            });
-            /** 根据 heading 在文档中的 pos 找到对应的 h1-h6 DOM 元素 */
-            function findHeadingElement(view: EditorView, pos: number): HTMLElement | null {
-                const dom = view.nodeDOM(pos) as HTMLElement | null;
-                if (dom && dom.matches("h1,h2,h3,h4,h5,h6")) return dom;
-
-                // 回退：pos 可能落在文本节点内，向上遍历找到标题元素
-                const { node } = view.domAtPos(pos + 1);
-                let el: HTMLElement | null =
-                    node.nodeType === Node.TEXT_NODE
-                        ? node.parentElement
-                        : (node as HTMLElement);
-                while (el && !el.matches("h1,h2,h3,h4,h5,h6")) {
-                    el = el.parentElement;
-                }
-                return el;
-            }
+            applyTooltip(label, text, { placement: "above", truncatedOnly: true });
 
             label.addEventListener("mousedown", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const view = getEditorView();
-                if (!view) return;
+                const v = getEditorView();
+                if (!v) return;
                 try {
-                    const el = findHeadingElement(view, pos);
+                    const el = findHeadingElement(v, pos);
                     if (el) {
                         const topbar = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
                         const topbarH = topbar?.getBoundingClientRect().height ?? 40;
                         const top = el.getBoundingClientRect().top + window.scrollY - topbarH - 8;
                         window.scrollTo({ top, behavior: "smooth" });
                     }
-                } catch {
-                    /* 文档结构异常时忽略 */
-                }
+                } catch { /* ignore */ }
             });
 
             item.appendChild(label);

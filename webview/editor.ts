@@ -17,7 +17,7 @@ import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { undo, redo } from "@milkdown/kit/prose/history";
 import { keymap } from "@milkdown/kit/prose/keymap";
-import { Plugin, NodeSelection, TextSelection } from "@milkdown/kit/prose/state";
+import { Plugin, NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
 import { liftListItem } from "@milkdown/kit/prose/schema-list";
 import { lift, wrapIn } from "prosemirror-commands";
 import { CellSelection, TableMap } from "@milkdown/kit/prose/tables";
@@ -605,26 +605,26 @@ export async function createEditor(
                 { label: 'H5', level: 5 },
                 { label: 'H6', level: 6 },
             ],
-            buildTopBar: (builder: any) => {
+            buildTopBar: (builder) => {
                 // Undo/Redo — 最前面独立组
                 builder.addGroup('history', '').addItem('undo', {
-                    icon: TbUndo as any,
-                    active: (ctx: any) => undo(ctx.get(editorViewCtx).state),
-                    onRun: (ctx: any) => { const v = ctx.get(editorViewCtx); undo(v.state, v.dispatch, v); },
-                } as any).addItem('redo', {
-                    icon: TbRedo as any,
-                    active: (ctx: any) => redo(ctx.get(editorViewCtx).state),
-                    onRun: (ctx: any) => { const v = ctx.get(editorViewCtx); redo(v.state, v.dispatch, v); },
-                } as any);
+                    icon: TbUndo,
+                    active: (ctx) => undo(ctx.get(editorViewCtx).state),
+                    onRun: (ctx) => { const v = ctx.get(editorViewCtx); undo(v.state, v.dispatch, v); },
+                }).addItem('redo', {
+                    icon: TbRedo,
+                    active: (ctx) => redo(ctx.get(editorViewCtx).state),
+                    onRun: (ctx) => { const v = ctx.get(editorViewCtx); redo(v.state, v.dispatch, v); },
+                });
                 // 清除格式 — formatting 组末尾（行内代码后面）
                 builder.getGroup('formatting').addItem('clear-format', {
-                    icon: TbEraser as any,
-                    active: (ctx: any) => {
+                    icon: TbEraser,
+                    active: (ctx) => {
                         const v = ctx.get(editorViewCtx);
                         const { from, to, empty } = v.state.selection;
                         if (!empty) {
                             let has = false;
-                            v.state.doc.nodesBetween(from, to, (n: any) => { if (n.marks.length) { has = true; return false; } return true; });
+                            v.state.doc.nodesBetween(from, to, (n) => { if (n.marks.length) { has = true; return false; } return true; });
                             return has;
                         }
                         // 无选区时：光标在链接内即为 active
@@ -632,7 +632,7 @@ export async function createEditor(
                         if (!linkType) return false;
                         return linkType.isInSet(v.state.doc.resolve(from).marks()) !== undefined;
                     },
-                    onRun: (ctx: any) => {
+                    onRun: (ctx) => {
                         const v = ctx.get(editorViewCtx);
                         let { from, to, empty } = v.state.selection;
                         const tr = v.state.tr;
@@ -658,35 +658,35 @@ export async function createEditor(
                             while (to < docSize && v.state.doc.rangeHasMark(to, to + 1, linkType)) to++;
                         }
 
-                        v.state.doc.nodesBetween(from, to, (n: any, pos: number) => {
+                        v.state.doc.nodesBetween(from, to, (n, pos) => {
                             if (n.marks.length) {
                                 const s = Math.max(pos, from), e = Math.min(pos + n.nodeSize, to);
-                                n.marks.forEach((m: any) => tr.removeMark(s, e, m.type));
+                                n.marks.forEach((m) => tr.removeMark(s, e, m.type));
                             }
                         });
                         if (linkType) tr.removeMark(from, to, linkType);
                         v.dispatch(tr);
                     },
-                } as any);
+                });
                 // 图片 — insert 组，link 和 table 之间（清空后按序重建）
                 {
                     const g = builder.getGroup('insert'); const items = g.group.items;
-                    const linkItem = items.find((i: any) => i.key === 'link');
-                    const tableItem = items.find((i: any) => i.key === 'table');
+                    const linkItem = items.find((i) => i.key === 'link');
+                    const tableItem = items.find((i) => i.key === 'table');
                     g.clear();
                     if (linkItem) g.addItem('link', linkItem);
                     g.addItem('image', {
-                        icon: TbImage as any,
+                        icon: TbImage,
                         active: () => false,
-                        onRun: (ctx: any) => {
+                        onRun: (ctx) => {
                             ctx.get(editorViewCtx).dom.dispatchEvent(new CustomEvent('epytor:insertImage', { bubbles: true }));
                         },
-                    } as any);
+                    });
                     if (tableItem) g.addItem('table', tableItem);
                 }
                 // 引用块一键退出：在引用内点击 → lift 解包，否则 → 包裹
                 {
-                    const isInBlockquote = (state: any) => {
+                    const isInBlockquote = (state: EditorState) => {
                         const bqType = state.schema.nodes['blockquote'];
                         if (!bqType) return false;
                         const { $from } = state.selection;
@@ -698,14 +698,14 @@ export async function createEditor(
 
                     const moreG = builder.getGroup('more');
                     const moreItems = moreG.group.items;
-                    const quoteItem = moreItems.find((i: any) => i.key === 'quote');
-                    const hrItem = moreItems.find((i: any) => i.key === 'hr');
-                    const quoteIcon = (quoteItem as any)?.icon;
+                    const quoteItem = moreItems.find((i) => i.key === 'quote');
+                    const hrItem = moreItems.find((i) => i.key === 'hr');
+                    const quoteIcon = quoteItem?.icon ?? '';
                     moreG.clear();
                     moreG.addItem('quote', {
                         icon: quoteIcon,
-                        active: (ctx: any) => isInBlockquote(ctx.get(editorViewCtx).state),
-                        onRun: (ctx: any) => {
+                        active: (ctx) => isInBlockquote(ctx.get(editorViewCtx).state),
+                        onRun: (ctx) => {
                             const v = ctx.get(editorViewCtx);
                             if (isInBlockquote(v.state)) {
                                 lift(v.state, v.dispatch);
@@ -714,34 +714,34 @@ export async function createEditor(
                                 if (bq) wrapIn(bq)(v.state, v.dispatch);
                             }
                         },
-                    } as any);
+                    });
                     if (hrItem) moreG.addItem('hr', hrItem);
                 }
                 // 目录切换 — 设置前独立组
                 builder.addGroup('toc', '').addItem('toc', {
-                    icon: TbToc as any,
+                    icon: TbToc,
                     active: () => false,
                     onRun: () => {
                         onTocToggle?.();
                     },
-                } as any);
+                });
                 // 设置 — 末尾独立组
                 builder.addGroup('settings', '').addItem('settings', {
-                    icon: TbGear as any,
+                    icon: TbGear,
                     active: () => false,
                     onRun: () => {
                         document.dispatchEvent(new CustomEvent('epytor:openSettings', { bubbles: true }));
                     },
-                } as any);
+                });
                 // 将 toc、history 组移到最前面
                 const groups = builder.build();
-                const tocGroup = groups.find((g: any) => g.key === 'toc');
+                const tocGroup = groups.find((g) => g.key === 'toc');
                 if (tocGroup) {
                     const idx = groups.indexOf(tocGroup);
                     groups.splice(idx, 1);
                     groups.unshift(tocGroup);
                 }
-                const historyGroup = groups.find((g: any) => g.key === 'history');
+                const historyGroup = groups.find((g) => g.key === 'history');
                 if (historyGroup) {
                     const idx = groups.indexOf(historyGroup);
                     groups.splice(idx, 1);

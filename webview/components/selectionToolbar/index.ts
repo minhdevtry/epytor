@@ -369,6 +369,247 @@ export function sampleDocPosition(
     };
 }
 
+// ─── 格式下拉菜单（文字模式）────────────────────────────────────
+function createFormatDropdown(
+    getEditor: GetEditor,
+    getView: () => EditorView | null,
+    onFormatApplied: () => void,
+): {
+    fmtWrap: HTMLElement;
+    fmtBtn: HTMLButtonElement;
+    fmtMenu: HTMLElement;
+    fmtItems: HTMLElement[];
+    formats: [string, string, () => void][];
+} {
+    const fmtWrap = document.createElement("div");
+    fmtWrap.className = "sel-tb-fmt-wrap";
+
+    const fmtBtn = document.createElement("button");
+    fmtBtn.className = "sel-tb-btn sel-tb-fmt-btn";
+    fmtBtn.innerHTML = `<span class="sel-tb-fmt-label">P</span>${IconChevronDown}`;
+    fmtBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    const fmtMenu = document.createElement("div");
+    fmtMenu.className = "sel-tb-fmt-menu";
+    fmtMenu.style.display = "none";
+
+    const formats: [string, string, () => void][] = [
+        [t("Paragraph"), "P", () => callCmd(getEditor, turnIntoTextCommand)],
+        [t("Heading 1"), "H1", () => callCmd(getEditor, wrapInHeadingCommand, 1)],
+        [t("Heading 2"), "H2", () => callCmd(getEditor, wrapInHeadingCommand, 2)],
+        [t("Heading 3"), "H3", () => callCmd(getEditor, wrapInHeadingCommand, 3)],
+        [t("Heading 4"), "H4", () => callCmd(getEditor, wrapInHeadingCommand, 4)],
+        [t("Heading 5"), "H5", () => callCmd(getEditor, wrapInHeadingCommand, 5)],
+        [t("Heading 6"), "H6", () => callCmd(getEditor, wrapInHeadingCommand, 6)],
+    ];
+
+    const fmtItems: HTMLElement[] = [];
+    formats.forEach(([, shortLabel, action]) => {
+        const item = document.createElement("div");
+        item.className = "sel-tb-fmt-item";
+        item.textContent = shortLabel;
+        item.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            action();
+            fmtMenu.style.display = "none";
+            requestAnimationFrame(onFormatApplied);
+        });
+        fmtMenu.appendChild(item);
+        fmtItems.push(item);
+    });
+
+    let fmtHideTimer: ReturnType<typeof setTimeout> | null = null;
+    fmtWrap.addEventListener("mouseenter", () => {
+        if (fmtHideTimer) { clearTimeout(fmtHideTimer); fmtHideTimer = null; }
+        const rect = fmtBtn.getBoundingClientRect();
+        const approxH = formats.length * 30;
+        if (rect.top < approxH + 16) {
+            fmtMenu.style.bottom = "auto";
+            fmtMenu.style.top = "calc(100% + 6px)";
+        } else {
+            fmtMenu.style.top = "auto";
+            fmtMenu.style.bottom = "calc(100% + 6px)";
+        }
+        fmtMenu.style.display = "flex";
+    });
+    fmtWrap.addEventListener("mouseleave", () => {
+        fmtHideTimer = setTimeout(() => { fmtMenu.style.display = "none"; }, 100);
+    });
+    fmtMenu.addEventListener("mouseenter", () => {
+        if (fmtHideTimer) { clearTimeout(fmtHideTimer); fmtHideTimer = null; }
+    });
+
+    fmtWrap.appendChild(fmtBtn);
+    fmtWrap.appendChild(fmtMenu);
+
+    return { fmtWrap, fmtBtn, fmtMenu, fmtItems, formats };
+}
+
+// ─── 表格对齐下拉菜单 ──────────────────────────────────────────
+function createAlignmentDropdown(
+    getView: () => EditorView | null,
+): { alignWrap: HTMLElement; alignBtn: HTMLButtonElement; alignMenu: HTMLElement } {
+    const alignWrap = document.createElement("div");
+    alignWrap.className = "sel-tb-fmt-wrap";
+    alignWrap.style.display = "none";
+
+    const alignBtn = document.createElement("button");
+    alignBtn.className = "sel-tb-btn sel-tb-fmt-btn";
+    alignBtn.innerHTML = IconAlignLeft + IconChevronDown;
+    alignBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    const alignMenu = document.createElement("div");
+    alignMenu.className = "sel-tb-fmt-menu";
+    alignMenu.style.display = "none";
+
+    const alignDefs: [string, string, string][] = [
+        [IconAlignLeft, t("Align Left"), "left"],
+        [IconAlignCenter, t("Align Center"), "center"],
+        [IconAlignRight, t("Align Right"), "right"],
+    ];
+    alignDefs.forEach(([icon, title, value]) => {
+        const item = document.createElement("div");
+        item.className = "sel-tb-fmt-item sel-tb-align-item";
+        item.innerHTML = icon;
+        applyTooltip(item as HTMLElement, title, { placement: "above" });
+        item.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const view = getView();
+            if (!view) return;
+            setCellAttr("alignment", value)(view.state, view.dispatch);
+            alignMenu.style.display = "none";
+        });
+        alignMenu.appendChild(item);
+    });
+
+    let alignHideTimer: ReturnType<typeof setTimeout> | null = null;
+    alignWrap.addEventListener("mouseenter", () => {
+        if (alignHideTimer) { clearTimeout(alignHideTimer); alignHideTimer = null; }
+        const rect = alignBtn.getBoundingClientRect();
+        const approxH = alignDefs.length * 34;
+        if (rect.top < approxH + 16) {
+            alignMenu.style.bottom = "auto";
+            alignMenu.style.top = "calc(100% + 6px)";
+        } else {
+            alignMenu.style.top = "auto";
+            alignMenu.style.bottom = "calc(100% + 6px)";
+        }
+        alignMenu.style.display = "flex";
+    });
+    alignWrap.addEventListener("mouseleave", () => {
+        alignHideTimer = setTimeout(() => { alignMenu.style.display = "none"; }, 100);
+    });
+    alignMenu.addEventListener("mouseenter", () => {
+        if (alignHideTimer) { clearTimeout(alignHideTimer); alignHideTimer = null; }
+    });
+
+    alignWrap.appendChild(alignBtn);
+    alignWrap.appendChild(alignMenu);
+
+    return { alignWrap, alignBtn, alignMenu };
+}
+
+// ─── 表格删除按钮 ──────────────────────────────────────────────
+function createTableDeleteButtons(
+    getView: () => EditorView | null,
+    hideToolbar: () => void,
+): {
+    deleteRowBtn: HTMLButtonElement;
+    clearHeaderBtn: HTMLButtonElement;
+    deleteTableBtn: HTMLButtonElement;
+    deleteColBtn: HTMLButtonElement;
+} {
+    const deleteRowBtn = sBtn(IconTrash2, t("Delete Row"), () => {
+        const view = getView();
+        if (!view) return;
+        const sel = view.state.selection;
+        if (!(sel instanceof CellSelection) || isFirstRow(sel)) return;
+        deleteRow(view.state, view.dispatch);
+        hideToolbar();
+        const v2 = getView();
+        if (v2) {
+            const safePos = Math.min(1, v2.state.doc.content.size - 1);
+            v2.dispatch(v2.state.tr.setSelection(TextSelection.create(v2.state.doc, safePos)));
+        }
+    });
+    deleteRowBtn.style.display = "none";
+
+    const clearHeaderBtn = sBtn(IconTrash2, t("Clear Header"), () => {
+        const view = getView();
+        if (!view) return;
+        const sel = view.state.selection;
+        if (!(sel instanceof CellSelection) || !isFirstRow(sel)) return;
+        const $anchor = sel.$anchorCell;
+        for (let d = $anchor.depth; d >= 0; d--) {
+            if ($anchor.node(d).type.name === "table") {
+                const tableNode = $anchor.node(d);
+                const map = TableMap.get(tableNode);
+                const tableStart = $anchor.start(d);
+                const ranges: Array<{ from: number; to: number }> = [];
+                for (let col = 0; col < map.width; col++) {
+                    const cellPos = tableStart + map.positionAt(0, col, tableNode);
+                    const $cell = view.state.doc.resolve(cellPos);
+                    const cellNode = $cell.nodeAfter;
+                    if (cellNode) {
+                        ranges.push({ from: cellPos + 1, to: cellPos + 1 + cellNode.content.size });
+                    }
+                }
+                let tr = view.state.tr;
+                for (let i = ranges.length - 1; i >= 0; i--) {
+                    const { from, to } = ranges[i];
+                    const emptyPara = view.state.schema.nodes["paragraph"]?.createAndFill();
+                    if (emptyPara) tr = tr.replaceWith(from, to, emptyPara);
+                }
+                view.dispatch(tr);
+                hideToolbar();
+                return;
+            }
+        }
+    });
+    clearHeaderBtn.style.display = "none";
+
+    const deleteTableBtn = sBtn(IconTrash2, t("Delete Table"), () => {
+        const view = getView();
+        if (!view) return;
+        const sel = view.state.selection;
+        if (!(sel instanceof CellSelection)) return;
+        const $anchor = sel.$anchorCell;
+        for (let d = $anchor.depth; d >= 0; d--) {
+            if ($anchor.node(d).type.name === "table") {
+                const tableStart = $anchor.before(d);
+                const tableEnd = tableStart + $anchor.node(d).nodeSize;
+                view.dispatch(view.state.tr.delete(tableStart, tableEnd));
+                hideToolbar();
+                return;
+            }
+        }
+    });
+    deleteTableBtn.style.display = "none";
+
+    const deleteColBtn = sBtn(IconTrash2, t("Delete Column"), () => {
+        const view = getView();
+        if (!view) return;
+        deleteColumn(view.state, view.dispatch);
+        hideToolbar();
+        const v2 = getView();
+        if (v2) {
+            const safePos = Math.min(1, v2.state.doc.content.size - 1);
+            v2.dispatch(v2.state.tr.setSelection(TextSelection.create(v2.state.doc, safePos)));
+        }
+    });
+    deleteColBtn.style.display = "none";
+
+    return { deleteRowBtn, clearHeaderBtn, deleteTableBtn, deleteColBtn };
+}
+
 export function setupSelectionToolbar(
     getView: () => EditorView | null,
     getEditor: () => Editor | null,
@@ -408,112 +649,15 @@ export function setupSelectionToolbar(
     toolbar.style.display = "none";
     document.body.appendChild(toolbar);
 
-    // ── 格式下拉（文字模式 / 非表格专属）──────────
-    const fmtWrap = document.createElement("div");
-    fmtWrap.className = "sel-tb-fmt-wrap";
-
-    const fmtBtn = document.createElement("button");
-    fmtBtn.className = "sel-tb-btn sel-tb-fmt-btn";
-    fmtBtn.innerHTML = `<span class="sel-tb-fmt-label">P</span>${IconChevronDown}`;
-    fmtBtn.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-
-    const fmtMenu = document.createElement("div");
-    fmtMenu.className = "sel-tb-fmt-menu";
-    fmtMenu.style.display = "none";
-
-    const formats: [string, string, () => void][] = [
-        [t("Paragraph"), "P", () => callCmd(getEditor, turnIntoTextCommand)],
-        [
-            t("Heading 1"),
-            "H1",
-            () => callCmd(getEditor, wrapInHeadingCommand, 1),
-        ],
-        [
-            t("Heading 2"),
-            "H2",
-            () => callCmd(getEditor, wrapInHeadingCommand, 2),
-        ],
-        [
-            t("Heading 3"),
-            "H3",
-            () => callCmd(getEditor, wrapInHeadingCommand, 3),
-        ],
-        [
-            t("Heading 4"),
-            "H4",
-            () => callCmd(getEditor, wrapInHeadingCommand, 4),
-        ],
-        [
-            t("Heading 5"),
-            "H5",
-            () => callCmd(getEditor, wrapInHeadingCommand, 5),
-        ],
-        [
-            t("Heading 6"),
-            "H6",
-            () => callCmd(getEditor, wrapInHeadingCommand, 6),
-        ],
-    ];
-
-    const fmtItems: HTMLElement[] = [];
-
-    formats.forEach(([, shortLabel, action]) => {
-        const item = document.createElement("div");
-        item.className = "sel-tb-fmt-item";
-        item.textContent = shortLabel;
-        item.addEventListener("mousedown", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            action();
-            fmtMenu.style.display = "none";
-            // 格式命令执行后刷新激活状态（事务在下一帧 applied）
-            requestAnimationFrame(() => {
-                const v = getView();
-                if (v && toolbar.style.display !== "none") {
-                    showAndPosition(v);
-                }
-            });
-        });
-        fmtMenu.appendChild(item);
-        fmtItems.push(item);
-    });
-
-    let fmtHideTimer: ReturnType<typeof setTimeout> | null = null;
-
-    fmtWrap.addEventListener("mouseenter", () => {
-        if (fmtHideTimer) {
-            clearTimeout(fmtHideTimer);
-            fmtHideTimer = null;
-        }
-        // 空间检测：默认在上方，空间不足则切换到下方
-        const rect = fmtBtn.getBoundingClientRect();
-        const approxH = formats.length * 30;
-        if (rect.top < approxH + 16) {
-            fmtMenu.style.bottom = "auto";
-            fmtMenu.style.top = "calc(100% + 6px)";
-        } else {
-            fmtMenu.style.top = "auto";
-            fmtMenu.style.bottom = "calc(100% + 6px)";
-        }
-        fmtMenu.style.display = "flex";
-    });
-    fmtWrap.addEventListener("mouseleave", () => {
-        fmtHideTimer = setTimeout(() => {
-            fmtMenu.style.display = "none";
-        }, 100);
-    });
-    fmtMenu.addEventListener("mouseenter", () => {
-        if (fmtHideTimer) {
-            clearTimeout(fmtHideTimer);
-            fmtHideTimer = null;
-        }
-    });
-
-    fmtWrap.appendChild(fmtBtn);
-    fmtWrap.appendChild(fmtMenu);
+    // ── 格式下拉 ──────────────────────────────────
+    const { fmtWrap, fmtBtn, fmtMenu, fmtItems, formats } = createFormatDropdown(
+        getEditor,
+        getView,
+        () => {
+            const v = getView();
+            if (v && toolbar.style.display !== "none") showAndPosition(v);
+        },
+    );
     toolbar.appendChild(fmtWrap);
 
     const textFmtSep = sSep();
@@ -554,198 +698,18 @@ export function setupSelectionToolbar(
     tableSep.style.display = "none";
     toolbar.appendChild(tableSep);
 
-    // 对齐下拉（单图标 hover 展开）
-    const alignWrap = document.createElement("div");
-    alignWrap.className = "sel-tb-fmt-wrap";
-    alignWrap.style.display = "none";
-
-    const alignBtn = document.createElement("button");
-    alignBtn.className = "sel-tb-btn sel-tb-fmt-btn";
-    alignBtn.innerHTML = IconAlignLeft + IconChevronDown;
-    alignBtn.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-
-    const alignMenu = document.createElement("div");
-    alignMenu.className = "sel-tb-fmt-menu";
-    alignMenu.style.display = "none";
-
-    const alignDefs: [string, string, string][] = [
-        [IconAlignLeft, t("Align Left"), "left"],
-        [IconAlignCenter, t("Align Center"), "center"],
-        [IconAlignRight, t("Align Right"), "right"],
-    ];
-    alignDefs.forEach(([icon, title, value]) => {
-        const item = document.createElement("div");
-        item.className = "sel-tb-fmt-item sel-tb-align-item";
-        item.innerHTML = icon;
-        applyTooltip(item as HTMLElement, title, { placement: "above" });
-        item.addEventListener("mousedown", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const view = getView();
-            if (!view) {
-                return;
-            }
-            setCellAttr("alignment", value)(view.state, view.dispatch);
-            alignMenu.style.display = "none";
-        });
-        alignMenu.appendChild(item);
-    });
-
-    let alignHideTimer: ReturnType<typeof setTimeout> | null = null;
-    alignWrap.addEventListener("mouseenter", () => {
-        if (alignHideTimer) {
-            clearTimeout(alignHideTimer);
-            alignHideTimer = null;
-        }
-        // 空间检测：默认在上方，空间不足则切换到下方
-        const rect = alignBtn.getBoundingClientRect();
-        const approxH = alignDefs.length * 34;
-        if (rect.top < approxH + 16) {
-            alignMenu.style.bottom = "auto";
-            alignMenu.style.top = "calc(100% + 6px)";
-        } else {
-            alignMenu.style.top = "auto";
-            alignMenu.style.bottom = "calc(100% + 6px)";
-        }
-        alignMenu.style.display = "flex";
-    });
-    alignWrap.addEventListener("mouseleave", () => {
-        alignHideTimer = setTimeout(() => {
-            alignMenu.style.display = "none";
-        }, 100);
-    });
-    alignMenu.addEventListener("mouseenter", () => {
-        if (alignHideTimer) {
-            clearTimeout(alignHideTimer);
-            alignHideTimer = null;
-        }
-    });
-
-    alignWrap.appendChild(alignBtn);
-    alignWrap.appendChild(alignMenu);
+    const { alignWrap, alignMenu } = createAlignmentDropdown(getView);
     toolbar.appendChild(alignWrap);
 
     const deleteSep = sSep();
     deleteSep.style.display = "none";
     toolbar.appendChild(deleteSep);
 
-    const deleteRowBtn = sBtn(IconTrash2, t("Delete Row"), () => {
-        const view = getView();
-        if (!view) {
-            return;
-        }
-        const sel = view.state.selection;
-        if (!(sel instanceof CellSelection) || isFirstRow(sel)) {
-            return;
-        }
-        deleteRow(view.state, view.dispatch);
-        hideToolbar();
-        const v2 = getView();
-        if (v2) {
-            const safePos = Math.min(1, v2.state.doc.content.size - 1);
-            v2.dispatch(
-                v2.state.tr.setSelection(
-                    TextSelection.create(v2.state.doc, safePos),
-                ),
-            );
-        }
-    });
-    deleteRowBtn.style.display = "none";
+    const { deleteRowBtn, clearHeaderBtn, deleteTableBtn, deleteColBtn } =
+        createTableDeleteButtons(getView, hideToolbar);
     toolbar.appendChild(deleteRowBtn);
-
-    // 清空表头内容（不删除行）
-    const clearHeaderBtn = sBtn(IconTrash2, t("Clear Header"), () => {
-        const view = getView();
-        if (!view) {
-            return;
-        }
-        const sel = view.state.selection;
-        if (!(sel instanceof CellSelection) || !isFirstRow(sel)) {
-            return;
-        }
-        const $anchor = sel.$anchorCell;
-        for (let d = $anchor.depth; d >= 0; d--) {
-            if ($anchor.node(d).type.name === "table") {
-                const tableNode = $anchor.node(d);
-                const map = TableMap.get(tableNode);
-                const tableStart = $anchor.start(d);
-                // 收集第 0 行所有单元格的内容范围（从后往前，避免位置偏移）
-                const ranges: Array<{ from: number; to: number }> = [];
-                for (let col = 0; col < map.width; col++) {
-                    const cellPos =
-                        tableStart + map.positionAt(0, col, tableNode);
-                    const $cell = view.state.doc.resolve(cellPos);
-                    const cellNode = $cell.nodeAfter;
-                    if (cellNode) {
-                        ranges.push({
-                            from: cellPos + 1,
-                            to: cellPos + 1 + cellNode.content.size,
-                        });
-                    }
-                }
-                let tr = view.state.tr;
-                for (let i = ranges.length - 1; i >= 0; i--) {
-                    const { from, to } = ranges[i];
-                    const emptyPara =
-                        view.state.schema.nodes["paragraph"]?.createAndFill();
-                    if (emptyPara) {
-                        tr = tr.replaceWith(from, to, emptyPara);
-                    }
-                }
-                view.dispatch(tr);
-                hideToolbar();
-                return;
-            }
-        }
-    });
-    clearHeaderBtn.style.display = "none";
     toolbar.appendChild(clearHeaderBtn);
-
-    // 删除整个表格（仅整表格选中时显示）
-    const deleteTableBtn = sBtn(IconTrash2, t("Delete Table"), () => {
-        const view = getView();
-        if (!view) {
-            return;
-        }
-        const sel = view.state.selection;
-        if (!(sel instanceof CellSelection)) {
-            return;
-        }
-        const $anchor = sel.$anchorCell;
-        for (let d = $anchor.depth; d >= 0; d--) {
-            if ($anchor.node(d).type.name === "table") {
-                const tableStart = $anchor.before(d);
-                const tableEnd = tableStart + $anchor.node(d).nodeSize;
-                view.dispatch(view.state.tr.delete(tableStart, tableEnd));
-                hideToolbar();
-                return;
-            }
-        }
-    });
-    deleteTableBtn.style.display = "none";
     toolbar.appendChild(deleteTableBtn);
-
-    const deleteColBtn = sBtn(IconTrash2, t("Delete Column"), () => {
-        const view = getView();
-        if (!view) {
-            return;
-        }
-        deleteColumn(view.state, view.dispatch);
-        hideToolbar();
-        const v2 = getView();
-        if (v2) {
-            const safePos = Math.min(1, v2.state.doc.content.size - 1);
-            v2.dispatch(
-                v2.state.tr.setSelection(
-                    TextSelection.create(v2.state.doc, safePos),
-                ),
-            );
-        }
-    });
-    deleteColBtn.style.display = "none";
     toolbar.appendChild(deleteColBtn);
 
     // ── 工具栏外部点击关闭（编辑器内点击不关闭，避免 shift+click 扩选后工具栏被隐藏）
