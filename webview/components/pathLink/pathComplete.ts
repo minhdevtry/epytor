@@ -2,6 +2,11 @@ import { notifyGetPathSuggestions } from "@/messaging";
 import { getFileIcon } from "./fileIcons";
 import type { EditorView } from "@milkdown/kit/prose/view";
 
+// ─── 常量 ────────────────────────────────────────────────────
+const PATH_RETRIGGER_DELAY_MS = 50;
+const PATH_SUGGESTION_TIMEOUT_MS = 5000;
+const PATH_DEBOUNCE_MS = 200;
+
 // 触发补全的路径前缀检测
 const PATH_PREFIX_REGEX = /^(@\/|\.{1,2}\/|[a-zA-Z0-9_-][a-zA-Z0-9._-]*\/)/;
 
@@ -118,7 +123,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
             setTimeout(() => {
                 const newCode = getActiveInlineCode();
                 if (newCode) { triggerSuggest(newCode); }
-            }, 50);
+            }, PATH_RETRIGGER_DELAY_MS);
         } else {
             closeDropdown();
         }
@@ -199,7 +204,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
             if (_pendingSuggestions.has(id)) {
                 _pendingSuggestions.delete(id);
             }
-        }, 5000);
+        }, PATH_SUGGESTION_TIMEOUT_MS);
     }
 
     // 键盘导航（capture 阶段，优先于编辑器处理）
@@ -253,7 +258,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         debounceTimer = setTimeout(() => {
             debounceTimer = null;
             triggerSuggest(code);
-        }, 200);
+        }, PATH_DEBOUNCE_MS);
     });
 
     // 点击其他区域关闭下拉

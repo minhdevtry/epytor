@@ -10,6 +10,7 @@ import "@milkdown/crepe/theme/common/top-bar.css";
 import "@milkdown/crepe/theme/common/toolbar.css";
 import "@milkdown/crepe/theme/common/link-tooltip.css";
 import "./style.css"; // 必须在 Crepe CSS 之后加载，用 VSCode 变量覆盖 Crepe 主题
+import { DEFAULT_TOPBAR_HEIGHT, VIEWPORT_PADDING } from "../shared/constants";
 import {
     createEditor,
     getEditorView,
@@ -90,9 +91,9 @@ function scrollToSourceLine(view: EditorView, lineMap: number[], targetLine: num
     const lineOffset = targetLine - blockStartLine;
     const proportion = blockLineCount > 1 ? Math.min(lineOffset / (blockLineCount - 1), 1) : 0;
 
-    const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? 40;
+    const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
     const elRect = el.getBoundingClientRect();
-    const scrollTarget = elRect.top + window.scrollY + elRect.height * proportion - topbarH - 16;
+    const scrollTarget = elRect.top + window.scrollY + elRect.height * proportion - topbarH - VIEWPORT_PADDING * 2;
 
     if (_debugLog) console.log('[scrollToLine] targetLine:', targetLine, 'blockIdx:', blockIdx, 'lineMap[blockIdx]:', lineMap[blockIdx], 'proportion:', proportion.toFixed(2));
     window.scrollTo({ top: scrollTarget });
@@ -101,11 +102,11 @@ function scrollToSourceLine(view: EditorView, lineMap: number[], targetLine: num
 /** 检测视口顶部对应的源码行号（1-indexed），供切换到文本编辑器时定位用 */
 function getFirstVisibleSourceLine(view: EditorView, lineMap: number[]): number {
     if (!lineMap.length) { return 1; }
-    const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? 40;
+    const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
     const children = view.dom.children;
     for (let i = 0; i < children.length && i < lineMap.length; i++) {
         const rect = (children[i] as HTMLElement).getBoundingClientRect();
-        if (rect.bottom > topbarH + 8) {
+        if (rect.bottom > topbarH + VIEWPORT_PADDING) {
             const result = lineMap[i] ?? 1;
             if (_debugLog) console.log('[getFirstVisible] result:', result, 'blockIdx:', i, 'rect.bottom:', rect.bottom.toFixed(0));
             return result;
@@ -389,8 +390,8 @@ if (editorContainer) {
 	            const el = document.getElementById(href.slice(1));
 	            if (el) {
 	                const tb = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
-	                const th = tb?.getBoundingClientRect().height ?? 40;
-	                window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - th - 8, behavior: "smooth" });
+	                const th = tb?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
+	                window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - th - VIEWPORT_PADDING, behavior: "smooth" });
 	            }
 	            return;
 	        }

@@ -1,4 +1,5 @@
 import "./findBar.css";
+import { DEFAULT_TOPBAR_HEIGHT, VIEWPORT_PADDING } from "../../../shared/constants";
 import { createButton } from "@/ui/dom";
 import { IconChevronUp, IconChevronDown, IconX } from "@/ui/icons";
 import { t, kbd } from "@/i18n";
@@ -149,10 +150,11 @@ export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarContr
         const node = r.startContainer;
         const el = node instanceof Element ? node : (node as ChildNode).parentElement;
         if (el) {
-            const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? 40;
+            const FIND_SCROLL_OFFSET = 60;
+            const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
             const rect = el.getBoundingClientRect();
-            if (rect.top < topbarH + 8 || rect.bottom > window.innerHeight - 8) {
-                window.scrollTo({ top: rect.top + window.scrollY - topbarH - 60 });
+            if (rect.top < topbarH + VIEWPORT_PADDING || rect.bottom > window.innerHeight - VIEWPORT_PADDING) {
+                window.scrollTo({ top: rect.top + window.scrollY - topbarH - FIND_SCROLL_OFFSET });
             }
         }
     }

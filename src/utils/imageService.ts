@@ -5,6 +5,11 @@ import * as http from "http";
 import * as crypto from "crypto";
 import * as vscode from "vscode";
 
+// ─── 常量 ────────────────────────────────────────────────────
+const MAX_ALT_TEXT_LENGTH = 20;
+const UPLOAD_TIMEOUT_MS = 30_000;
+const ERROR_RESPONSE_PREVIEW_LENGTH = 200;
+
 // 按点分路径从对象中提取值
 export function getByPath(obj: unknown, dotPath: string): unknown {
     return dotPath.split(".").reduce<unknown>((acc, key) => {
@@ -34,7 +39,7 @@ export function mimeToExt(mimeType: string): string {
 export function generateFilename(altText: string, mimeType: string): string {
     const sanitized =
         (altText || "image")
-            .slice(0, 20)
+            .slice(0, MAX_ALT_TEXT_LENGTH)
             .replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, "-")
             .replace(/-+/g, "-")
             .replace(/^-|-$/g, "") || "image";
@@ -266,7 +271,7 @@ export async function uploadImageToServer(
         req.on("error", reject);
 
         // 30 秒超时
-        req.setTimeout(30000, () => {
+        req.setTimeout(UPLOAD_TIMEOUT_MS, () => {
             req.destroy(new Error("Upload request timed out after 30s"));
         });
 
@@ -279,14 +284,14 @@ export async function uploadImageToServer(
         parsed = JSON.parse(responseBody);
     } catch {
         throw new Error(
-            `Server returned non-JSON response: ${responseBody.slice(0, 200)}`,
+            `Server returned non-JSON response: ${responseBody.slice(0, ERROR_RESPONSE_PREVIEW_LENGTH)}`,
         );
     }
 
     const imageUrl = getByPath(parsed, responsePath);
     if (typeof imageUrl !== "string" || !imageUrl) {
         throw new Error(
-            `Cannot extract URL using path "${responsePath}" from response: ${responseBody.slice(0, 200)}`,
+            `Cannot extract URL using path "${responsePath}" from response: ${responseBody.slice(0, ERROR_RESPONSE_PREVIEW_LENGTH)}`,
         );
     }
 
