@@ -1,6 +1,6 @@
 # EPYTOR 路线图
 
-> 最后更新：2026-07-17（下午）
+> 最后更新：2026-07-17
 
 ***
 
@@ -25,18 +25,18 @@ fork 上游 [git-xing/md-wysiwyg-editor](https://github.com/git-xing/md-wysiwyg-
 
 * [x] **`setupSelectionToolbar` 拆分** — 提取 `createFormatDropdown` / `createAlignmentDropdown` / `createTableDeleteButtons` 三个模块函数（554→277 行）
 * [x] **`initToc` 拆分** — 提取 `getHeadings` / `findHeadingElement` / `hasChildren` / `isHeadingVisible` 到模块级（406→338 行）
-* [x] **`createImageView` 拆分** — 提取 `startToolbarInlineEdit` 通用内联编辑辅助，消除 `startCaptionEdit`/`startSrcEdit` 重复逻辑（\~80 行共用）
+* [ ] **`createImageView` 拆分** — 当前 499 行，`startCaptionEdit` / `startSrcEdit` 可提取为模块函数
 * [ ] **`resolveCustomEditor` 拆分** — [`MarkdownEditorProvider.ts:183`](../src/MarkdownEditorProvider.ts#L183)，322 行，可提取面板清理 / ViewState / 消息路由 / 文件监听为类方法
 * [ ] **顶栏 button tooltip 注入** — 用正路方案替代 MutationObserver + `requestAnimationFrame` 扫描 `.top-bar-item`
-* [x] **魔法数字常量化** — 新增 `shared/constants.ts`，提取 25 个命名常量，替换 \~55 处硬编码数字
+* [ ] **魔法数字常量化** — 顶栏高度 `36`/`40`、滚动偏移 `8`、选择器 `.milkdown-top-bar` 出现 10+ 次 → 定义常量
 * [x] **`buildTopBar` 类型安全** — 已使用 Crepe 官方上下文类型移除 `builder`、菜单项和回调中的 14 处 `as any`
 
 #### 🟡 中优先级（每次改一点，不单独排 PR）
 
-* [x] **下拉补全重复** — `pathComplete` / `imgPathComplete` → 提取 `closeDropdown`/`updateActiveItem` 到 `ui/dropdownComplete.ts`（\~40 行重复消除）
+* [x] **下拉补全重复** — `pathComplete` / `imgPathComplete` → 提取 `closeDropdown`/`updateActiveItem` 到 `ui/dropdownComplete.ts`（~40 行重复消除）
 * [x] **确认/取消编辑重复** — `startCaptionEdit` / `startSrcEdit` → 提取 `startToolbarInlineEdit` 到 `imageView/index.ts` 模块级
-* [ ] **hover 弹出菜单重复** — `selectionToolbar` 格式下拉 / 对齐下拉 → 提取 `createHoverMenu()` 到 `ui/dom.ts`
-* [x] **空 catch 块**（12 处）— 已全部添加描述性注释（4 处已有多余注释未改，8 处补充）
+* [ ] **hover 弹出菜单不显示 bug** — v1.1.3 预埋：选中文字工具栏出现后，hover/点击 P 按钮，格式下拉菜单 `display=flex` 已设置但不渲染（疑似 z-index/stacking context/pointer-events 被遮挡）。点击切换方案已实现但未根治，需独立排查。
+* [x] **空 catch 块**（12 处）— 已全部添加描述性注释（4 处已有充分注释未改，8 处补充）
 * [ ] **代码块全屏按钮注入** — MutationObserver 改为 Crepe NodeView 扩展
 * [ ] **CodeMirror 主题补配** — MutationObserver 改为 Compartment 初始化时传入
 
