@@ -601,7 +601,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
-    overflow: hidden;
+    overflow: visible;
 }
 /* 宽度 < 720px 时工具栏按钮允许换行（~19 个按钮 + 分隔线的最小宽度） */
 @container (max-width: 720px) {

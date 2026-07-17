@@ -35,7 +35,7 @@ fork 上游 [git-xing/md-wysiwyg-editor](https://github.com/git-xing/md-wysiwyg-
 
 * [x] **下拉补全重复** — `pathComplete` / `imgPathComplete` → 提取 `closeDropdown`/`updateActiveItem` 到 `ui/dropdownComplete.ts`（~40 行重复消除）
 * [x] **确认/取消编辑重复** — `startCaptionEdit` / `startSrcEdit` → 提取 `startToolbarInlineEdit` 到 `imageView/index.ts` 模块级
-* [ ] **hover 弹出菜单不显示 bug** — v1.1.3 预埋：选中文字工具栏出现后，hover/点击 P 按钮，格式下拉菜单 `display=flex` 已设置但不渲染（疑似 z-index/stacking context/pointer-events 被遮挡）。点击切换方案已实现但未根治，需独立排查。
+* [x] **顶栏 P 下拉菜单不显示** — `.top-bar-inner` 的 `overflow: hidden` 裁剪了 Crepe heading dropdown；改为 `overflow: visible` 并补充 CSS 回归测试
 * [x] **空 catch 块**（12 处）— 已全部添加描述性注释（4 处已有充分注释未改，8 处补充）
 * [ ] **代码块全屏按钮注入** — MutationObserver 改为 Crepe NodeView 扩展
 * [ ] **CodeMirror 主题补配** — MutationObserver 改为 Compartment 初始化时传入
