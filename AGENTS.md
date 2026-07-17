@@ -26,6 +26,9 @@
 * **Git commit 规范**：commit 描述用**中文**，类型前缀保留英文（`feat:`、`fix:`、`refactor:`、`chore:`、`docs:` 等）。例：`feat: 新增XXXX功能`、`fix: 修复XXXX问题`
 * **诚实原则**：不确定的事直接说"不确定"，禁止编造 URL、issue 编号、API 接口、文档引用或任何事实性信息
 * **优雅原则**：禁止 hack 或补丁式写法，优先使用框架/库官方 API、CSS 变量、配置回调等正路方案
+* **自检原则**：代码移动/提取后**必须**搜索确认旧位置已删除，不得留有死代码或同名遮蔽；标记 roadmap 条目完成前逐项列出实际完成项与未完成项，不得将部分完成标记为整体完成
+* **查证原则**：引用文件位置、函数名、调用关系时，若不确定则先 grep 确认再写，禁止凭记忆编造
+* **手测清单**：每次代码改动完成后（包括 bug 修复、新功能、重构还债），**必须**输出一份手测清单，列出受影响的交互路径和验收点，供开发者在 F5 调试实例中逐项验证
 
 ### 架构约束
 
@@ -188,30 +191,30 @@ __mocks__/vscode.ts      — vscode API 统一 mock
 5. 合并 commit message
 6. Tag annotation 内容
 
----
+***
 
 **阶段二：编辑 & 验证**
 
-1. **确认所有改动已提交到 `dev` 分支**
-2. **更新 `CHANGELOG.md` 和 `CHANGELOG.zh-CN.md`**：新版本 section 放在文件最顶部
-3. **更新 `package.json` 版本号**
-4. **运行 `pnpm test` 确认全部通过**
-5. **运行 `pnpm build` 确认编译无误**
+1. **确认所有改动已提交到** **`dev`** **分支**
+2. **更新** **`CHANGELOG.md`** **和** **`CHANGELOG.zh-CN.md`**：新版本 section 放在文件最顶部
+3. **更新** **`package.json`** **版本号**
+4. **运行** **`pnpm test`** **确认全部通过**
+5. **运行** **`pnpm build`** **确认编译无误**
 
----
+***
 
 **阶段三：最终确认**（编辑后、发布前）
 
 所有编辑完成后，**再次将实际改动展示给用户确认**（CHANGELOG diff、版本号、commit message、tag annotation），用户确认后方可继续。
 
----
+***
 
 **阶段四：发布**
 
-6. **合并 `dev` → `main`**：`git checkout main && git merge dev --no-ff -m "chore: 合并 dev → main，发布 v<VERSION>"`
+6. **合并** **`dev`** **→** **`main`**：`git checkout main && git merge dev --no-ff -m "chore: 合并 dev → main，发布 v<VERSION>"`
 7. **推送两个分支**：`git push origin dev main`
 8. **打 tag 触发发布**：`git tag -a v<VERSION> -m "v<VERSION>: <简述>" && git push origin v<VERSION>`
-9. **切回 `dev`**：`git checkout dev`
+9. **切回** **`dev`**：`git checkout dev`
 
 ### CI 自动化
 
@@ -244,9 +247,14 @@ Issue 使用 `.yml` Issue Forms（结构化表单），模板文件见 `.github/
 | Bug 报告 | `bug_report.yml` | `bug` |
 | 功能需求 | `feature_request.yml` | `enhancement` |
 
-- `blank_issues_enabled: false`（`config.yml`），强制使用模板，不允许空白 issue
-- 标签由模板 `labels:` 字段自动设置，用户无需手动选择
-- 非 Bug/功能的讨论引导至 [Discussions](https://github.com/peiyucn/epytor/discussions)
+* `blank_issues_enabled: false`（`config.yml`），强制使用模板，不允许空白 issue
+* 标签由模板 `labels:` 字段自动设置，用户无需手动选择
+* 非 Bug 功能的讨论引导至 [Discussions](https://github.com/peiyucn/epytor/discussions)
+* **开发过程中触发**：当出现以下情况时，主动提醒用户创建 Issue：
+  * 发现无法在本次修复的 bug
+  * 产生新功能想法但暂不开发
+  * 发现需要记录的技术债务
+  * 提示语示例："这个 bug 暂时修不了，需要创建一个 Issue 记录吗？"
 
 ***
 
@@ -269,18 +277,11 @@ Issue 使用 `.yml` Issue Forms（结构化表单），模板文件见 `.github/
 | 3 | 表格单击选中整格暂时关闭 | Crepe | [Milkdown#2414](https://github.com/Milkdown/milkdown/issues/2414) |
 
 **维护规则**：
+
 * 发现新的上游限制时追加到此表，同时在各 `README` 已知限制中标记 `⚠️ 上游` / `⚠️ Upstream`
 * 升级依赖版本时对照此表逐项验证，已解决的条目从表中移除，写入 CHANGELOG 的 Fixed
 * 优先在对应上游仓库提 issue，将链接填入"追踪"列
 * **向上游提 issue 时必须遵循对方模板规范**：标题带 `[Bug]` 或 `[Feature]` 前缀，正文结构化（复现步骤 / 期望行为 / 实际行为 / 运行环境）。若对方使用 `.yml` Issue Forms，`gh issue create` CLI 无法触发模板校验，需手动对齐模板要求的字段
 
-***
 
-## Devlog
-
-开发过程中发现 bug 或有功能想法时，通过 `/devlog` 技能记录为 GitHub Issue。
-
-* **触发词**：`记录 bug`、`已知 bug`、`功能需求`、`记录需求`、`/devlog`
-* **行为**：自动创建 GitHub Issue 并添加对应 label（bug → `bug`，功能 → `enhancement`）
-* **时机**：开发过程中随时记录，不必等到阶段结束
 
