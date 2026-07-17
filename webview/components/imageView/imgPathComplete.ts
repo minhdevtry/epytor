@@ -2,6 +2,13 @@ import { notifyGetPathSuggestions, notifyResolveImagePath } from "@/messaging";
 import { getFileIcon } from "../pathLink/fileIcons";
 import type { PathSuggestionItem } from "../../../shared/messages";
 
+// ─── 常量 ────────────────────────────────────────────────────
+const RESOLVE_IMAGE_TIMEOUT_MS = 3000;
+const PATH_SUGGESTION_TIMEOUT_MS = 5000;
+const PATH_COMPLETE_RETRIGGER_DELAY_MS = 50;
+const PATH_COMPLETE_DEBOUNCE_MS = 200;
+const IMAGE_BLUR_CLOSE_DELAY_MS = 150;
+
 // ─── resolveImagePath 异步机制 ────────────────────────────────
 const _pendingResolve = new Map<string, (uri: string) => void>();
 
@@ -18,7 +25,7 @@ export function resolveToWebviewUri(relPath: string): Promise<string> {
         const timer = setTimeout(() => {
             _pendingResolve.delete(id);
             resolve(relPath); // 超时回退
-        }, 3000);
+        }, RESOLVE_IMAGE_TIMEOUT_MS);
         _pendingResolve.set(id, (uri) => {
             clearTimeout(timer);
             resolve(uri);
@@ -104,7 +111,7 @@ export function attachImgPathComplete(
             closeDropdown();
             setTimeout(() => {
                 triggerSuggest();
-            }, 50);
+            }, PATH_COMPLETE_RETRIGGER_DELAY_MS);
         } else {
             closeDropdown();
         }
@@ -192,7 +199,7 @@ export function attachImgPathComplete(
         // 超时清理
         setTimeout(() => {
             _pendingImgSuggestions.delete(id);
-        }, 5000);
+        }, PATH_SUGGESTION_TIMEOUT_MS);
     }
 
     // ── 事件监听 ───────────────────────────────────────────────
@@ -208,7 +215,7 @@ export function attachImgPathComplete(
         debounceTimer = setTimeout(() => {
             debounceTimer = null;
             if (!isDestroyed) { triggerSuggest(); }
-        }, 200);
+        }, PATH_COMPLETE_DEBOUNCE_MS);
     }
 
     function onKeydown(e: KeyboardEvent): void {
@@ -277,7 +284,7 @@ export function attachImgPathComplete(
         // 延迟关闭，让 mousedown 的 applySelection 先执行
         setTimeout(() => {
             if (!isDestroyed) { closeDropdown(); }
-        }, 150);
+        }, IMAGE_BLUR_CLOSE_DELAY_MS);
     }
 
     input.addEventListener("input", onInput);

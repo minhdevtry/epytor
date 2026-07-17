@@ -18,6 +18,13 @@ import { createButton, createSeparator, setupInputKeyboard } from "@/ui/dom";
 import { attachImgPathComplete, resolveToWebviewUri } from './imgPathComplete';
 import './imageView.css';
 
+// ─── 常量 ────────────────────────────────────────────────────
+const MAX_IMAGE_LOAD_RETRIES = 5;
+const IMAGE_RETRY_BASE_DELAY_MS = 200;
+const IMAGE_RETRY_MAX_DELAY_MS = 2000;
+const MIN_IMAGE_RESIZE_HEIGHT = 40;
+const MAX_IMAGE_RESIZE_RATIO = 0.8;
+
 // ─── webviewUri ↔ relPath 双向映射（由 index.ts 在收到 init/revert 消息时写入）─────
 const _uriToRel = new Map<string, string>(); // webviewUri → relPath
 const _relToUri = new Map<string, string>(); // relPath    → webviewUri
@@ -130,6 +137,95 @@ function makeSep(): HTMLElement {
     return createSeparator("img-tb-sep", "span");
 }
 
+// ─── 工具栏内联编辑辅助 ──────────────────────────────────────
+interface ToolbarInlineEditOptions {
+    initialValue: string;
+    placeholder: string;
+    /** 确认回调，value 为输入值，input 保留 dataset 等属性 */
+    onConfirm: (value: string, input: HTMLInputElement) => void;
+    /** 取消回调 */
+    onCancel?: () => void;
+    /**
+     * 可选的输入增强（如 autocomplete）。
+     * 传入 input + confirm/cancel 回调，返回 detach 清理函数。
+     * 不提供时默认使用 setupInputKeyboard 处理 Enter/Escape。
+     */
+    setupComplete?: (
+        input: HTMLInputElement,
+        confirm: () => void,
+        cancel: () => void,
+    ) => (() => void) | void;
+}
+
+/**
+ * 在工具栏上启动内联编辑：隐藏原有内容，显示 input + 确认/取消按钮。
+ * 确认/取消后自动恢复工具栏原貌。
+ */
+function startToolbarInlineEdit(
+    toolbar: HTMLElement,
+    options: ToolbarInlineEditOptions,
+): void {
+    const input = document.createElement("input");
+    input.className = "img-rename-input";
+    input.value = options.initialValue;
+    input.placeholder = options.placeholder;
+    isolateInput(input);
+
+    function doConfirm(): void {
+        const value = input.value.trim();
+        options.onConfirm(value, input);
+        cleanup();
+    }
+
+    function doCancel(): void {
+        options.onCancel?.();
+        cleanup();
+    }
+
+    const confirmBtn = createButton({
+        className: "img-tb-btn",
+        tabIndex: -1,
+        icon: IconCheck,
+        onClick: doConfirm,
+    });
+    confirmBtn.style.color = "var(--vscode-charts-green, #4caf50)";
+    const cancelBtn = createButton({
+        className: "img-tb-btn",
+        tabIndex: -1,
+        icon: IconX,
+        onClick: doCancel,
+    });
+
+    // 隐藏原有工具栏内容，显示编辑控件
+    Array.from(toolbar.children).forEach((el) => {
+        (el as HTMLElement).style.display = "none";
+    });
+    toolbar.appendChild(input);
+    toolbar.appendChild(confirmBtn);
+    toolbar.appendChild(cancelBtn);
+
+    input.focus();
+    input.select();
+
+    const detachComplete = options.setupComplete
+        ? (options.setupComplete(input, doConfirm, doCancel) ?? undefined)
+        : undefined;
+
+    if (!options.setupComplete) {
+        setupInputKeyboard(input, doConfirm, doCancel);
+    }
+
+    function cleanup(): void {
+        detachComplete?.();
+        if (toolbar.contains(input)) toolbar.removeChild(input);
+        if (toolbar.contains(confirmBtn)) toolbar.removeChild(confirmBtn);
+        if (toolbar.contains(cancelBtn)) toolbar.removeChild(cancelBtn);
+        Array.from(toolbar.children).forEach((el) => {
+            (el as HTMLElement).style.display = "";
+        });
+    }
+}
+
 // ─── NodeView 工厂 ─────────────────────────────────────────
 export function createImageView(
     node: PMNode,
@@ -198,9 +294,9 @@ export function createImageView(
 
     let retryCount = 0;
     img.addEventListener("error", () => {
-        if (retryCount < 5) {
+        if (retryCount < MAX_IMAGE_LOAD_RETRIES) {
             retryCount++;
-            const delay = Math.min(200 * retryCount, 2000);
+            const delay = Math.min(IMAGE_RETRY_BASE_DELAY_MS * retryCount, IMAGE_RETRY_MAX_DELAY_MS);
             setTimeout(() => {
                 const src = img.src;
                 img.src = "";
@@ -253,7 +349,7 @@ export function createImageView(
         window.addEventListener("pointerup", onResizeUp);
     });
     function onResizeMove(e: PointerEvent) {
-        const h = Math.max(40, Math.min(window.innerHeight * 0.8, resizeStartH + (e.clientY - resizeStartY)));
+        const h = Math.max(MIN_IMAGE_RESIZE_HEIGHT, Math.min(window.innerHeight * MAX_IMAGE_RESIZE_RATIO, resizeStartH + (e.clientY - resizeStartY)));
         img.style.height = `${h}px`;
     }
     function onResizeUp() {
@@ -421,143 +517,80 @@ export function createImageView(
         isEditingCaption = true;
 
         const caption = parseRatio((currentNode.attrs["title"] as string) ?? "").clean;
-        const input = document.createElement("input");
-        input.className = "img-rename-input";
-        input.value = caption;
-        input.placeholder = t("Caption");
-        isolateInput(input);
-
-        const confirmBtn = createButton({ className: "img-tb-btn", tabIndex: -1, icon: IconCheck, onClick: confirm });
-        confirmBtn.style.color = "var(--vscode-charts-green, #4caf50)";
-        const cancelBtn = createButton({ className: "img-tb-btn", tabIndex: -1, icon: IconX, onClick: cancel });
-
-        Array.from(toolbar.children).forEach((el) => { (el as HTMLElement).style.display = "none"; });
-        toolbar.appendChild(input);
-        toolbar.appendChild(confirmBtn);
-        toolbar.appendChild(cancelBtn);
-        input.focus();
-        input.select();
-        setupInputKeyboard(input, confirm, cancel);
-
-        function confirm(): void {
-            if (!isEditingCaption) return;
-            isEditingCaption = false;
-            const newCaption = input.value.trim();
-            cleanup();
-            const pos = getPos();
-            if (pos === undefined) return;
-            const newTitle = encodeRatio(newCaption, currentRatio);
-            // 始终同步 alt：有 caption 就设 alt，没有就保留原值
-            view.dispatch(view.state.tr.setNodeMarkup(pos, null, {
-                ...currentNode.attrs,
-                title: newCaption !== caption ? newTitle : currentNode.attrs.title,
-                alt: newCaption || "",
-            }));
-            img.alt = newCaption || "";
-            captionEl.textContent = newCaption;
-            view.focus();
-        }
-
-        function cancel(): void {
-            if (!isEditingCaption) return;
-            isEditingCaption = false;
-            cleanup();
-            view.focus();
-        }
-
-        function cleanup(): void {
-            toolbar.removeChild(input);
-            toolbar.removeChild(confirmBtn);
-            toolbar.removeChild(cancelBtn);
-            Array.from(toolbar.children).forEach((el) => { (el as HTMLElement).style.display = ""; });
-        }
+        startToolbarInlineEdit(toolbar, {
+            initialValue: caption,
+            placeholder: t("Caption"),
+            onConfirm: (newCaption) => {
+                isEditingCaption = false;
+                const pos = getPos();
+                if (pos === undefined) return;
+                const newTitle = encodeRatio(newCaption, currentRatio);
+                view.dispatch(view.state.tr.setNodeMarkup(pos, null, {
+                    ...currentNode.attrs,
+                    title: newCaption !== caption ? newTitle : currentNode.attrs.title,
+                    alt: newCaption || "",
+                }));
+                img.alt = newCaption || "";
+                captionEl.textContent = newCaption;
+                view.focus();
+            },
+            onCancel: () => {
+                isEditingCaption = false;
+                view.focus();
+            },
+        });
     }
 
     // ── 编辑图片路径（src 属性）────────────────────────────────
     let isEditingSrc = false;
 
     function startSrcEdit(): void {
-        if (isEditingSrc) {
-            return;
-        }
+        if (isEditingSrc) return;
         isEditingSrc = true;
 
-        const input = document.createElement("input");
-        input.className = "img-rename-input";
-        // 显示相对路径（rawSrc 可能是 webviewUri，转换后更易读）
-        input.value = toDisplayPath(rawSrc);
-        input.placeholder = t("Image path or URL");
-        isolateInput(input);
+        startToolbarInlineEdit(toolbar, {
+            initialValue: toDisplayPath(rawSrc),
+            placeholder: t("Image path or URL"),
+            setupComplete: attachImgPathComplete,
+            onConfirm: (displayVal, input) => {
+                isEditingSrc = false;
+                // ① 补全时 dataset 存的 webviewUri 最可靠
+                const datasetUri = (input.dataset.imgWebviewUri ?? "").trim();
+                // ② 已有映射（init/revert 建立）
+                const mappedUri = displayVal ? toWebviewUri(displayVal) : "";
 
-        const confirmBtn = createButton({ className: "img-tb-btn", tabIndex: -1, icon: IconCheck, onClick: confirm });
-        confirmBtn.style.color = "var(--vscode-charts-green, #4caf50)";
-        const cancelBtn = createButton({ className: "img-tb-btn", tabIndex: -1, icon: IconX, onClick: cancel });
+                const applyUri = (newSrc: string) => {
+                    if (!newSrc || newSrc === rawSrc) { view.focus(); return; }
+                    const pos = getPos();
+                    if (pos === undefined) { view.focus(); return; }
+                    const nodeSize = currentNode.nodeSize;
+                    const tr = view.state.tr.setNodeMarkup(pos, null, { ...currentNode.attrs, src: newSrc });
+                    const afterPos = pos + nodeSize;
+                    if (afterPos <= tr.doc.content.size) {
+                        try { tr.setSelection(TextSelection.near(tr.doc.resolve(afterPos), 1)); } catch { /* setNodeMarkup 后节点位置可能偏移，光标恢复失败忽略 */ }
+                    }
+                    view.dispatch(tr);
+                    view.focus();
+                };
 
-        Array.from(toolbar.children).forEach((el) => {
-            (el as HTMLElement).style.display = "none";
-        });
-
-        toolbar.appendChild(input);
-        toolbar.appendChild(confirmBtn);
-        toolbar.appendChild(cancelBtn);
-        input.focus();
-        input.select();
-        const detachComplete = attachImgPathComplete(input, confirm, cancel);
-
-        function confirm(): void {
-            if (!isEditingSrc) { return; }
-            const displayVal = input.value.trim();
-            // ① 补全时 dataset 存的 webviewUri 最可靠
-            const datasetUri = (input.dataset.imgWebviewUri ?? "").trim();
-            // ② 已有映射（init/revert 建立）
-            const mappedUri = displayVal ? toWebviewUri(displayVal) : "";
-            isEditingSrc = false;
-            cleanup();
-
-            const applyUri = (newSrc: string) => {
-                if (!newSrc || newSrc === rawSrc) { view.focus(); return; }
-                const pos = getPos();
-                if (pos === undefined) { view.focus(); return; }
-                const nodeSize = currentNode.nodeSize;
-                const tr = view.state.tr.setNodeMarkup(pos, null, { ...currentNode.attrs, src: newSrc });
-                const afterPos = pos + nodeSize;
-                if (afterPos <= tr.doc.content.size) {
-                    try { tr.setSelection(TextSelection.near(tr.doc.resolve(afterPos), 1)); } catch { /* ignore */ }
+                if (datasetUri) {
+                    applyUri(datasetUri);
+                } else if (mappedUri !== displayVal) {
+                    applyUri(mappedUri);
+                } else if (displayVal) {
+                    // 绝对 URL 直接使用，不经过 Extension 解析
+                    if (/^https?:\/\//i.test(displayVal)) {
+                        applyUri(displayVal);
+                    } else {
+                        resolveToWebviewUri(displayVal).then(applyUri);
+                    }
                 }
-                view.dispatch(tr);
+            },
+            onCancel: () => {
+                isEditingSrc = false;
                 view.focus();
-            };
-
-            if (datasetUri) {
-                // 补全选中：直接用
-                applyUri(datasetUri);
-            } else if (mappedUri !== displayVal) {
-                // 映射命中（mappedUri 是 webviewUri，与 displayVal 不同）
-                applyUri(mappedUri);
-            } else if (displayVal) {
-                // 手动输入新路径：向 Extension 解析
-                resolveToWebviewUri(displayVal).then(applyUri);
-            }
-        }
-
-        function cancel(): void {
-            if (!isEditingSrc) {
-                return;
-            }
-            isEditingSrc = false;
-            cleanup();
-            view.focus();
-        }
-
-        function cleanup(): void {
-            detachComplete();
-            if (toolbar.contains(input)) toolbar.removeChild(input);
-            if (toolbar.contains(confirmBtn)) toolbar.removeChild(confirmBtn);
-            if (toolbar.contains(cancelBtn)) toolbar.removeChild(cancelBtn);
-            Array.from(toolbar.children).forEach((el) => {
-                (el as HTMLElement).style.display = "";
-            });
-        }
+            },
+        });
     }
 
     // ── NodeView 接口 ─────────────────────────────────────────

@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { MarkdownDocument } from "./MarkdownDocument";
@@ -8,6 +9,14 @@ import { computeLineMap } from "./utils/lineMap";
 import { extractFrontmatter, restoreContentForSave } from "./utils/contentTransform";
 import type { ToExtensionMessage, ToWebviewMessage } from "../shared/messages";
 
+// ─── 常量 ────────────────────────────────────────────────────
+const GLOBAL_REVEAL_LINE_TTL_MS = 10_000;
+const NAV_SUPPRESS_DURATION_MS = 1500;
+const PENDING_NAVIGATION_TTL_MS = 5000;
+const REVEAL_LINE_DELAYED_CHECK_MS = 1000;
+const AUTO_SWITCH_SUPPRESS_DURATION_MS = 2000;
+const SAVE_COOLDOWN_MS = 1500;
+const FS_WATCH_DEBOUNCE_MS = 200;
 
 export class MarkdownEditorProvider
     implements vscode.CustomEditorProvider<MarkdownDocument> {
@@ -62,7 +71,7 @@ export class MarkdownEditorProvider
         const p = this._pendingRevealLine;
         if (!p) { return undefined; }
         this._pendingRevealLine = undefined;
-        if (Date.now() - p.ts > 10000) { return undefined; }
+        if (Date.now() - p.ts > GLOBAL_REVEAL_LINE_TTL_MS) { return undefined; }
         return p.line;
     }
 
@@ -85,7 +94,7 @@ export class MarkdownEditorProvider
     /** 切换到文本编辑器时调用：1.5 秒内屏蔽来自文本编辑器的行号回传 */
     public suppressNavFromTextEditor(): void {
         this._suppressNavFromTextEditor = true;
-        setTimeout(() => { this._suppressNavFromTextEditor = false; }, 1500);
+        setTimeout(() => { this._suppressNavFromTextEditor = false; }, NAV_SUPPRESS_DURATION_MS);
     }
 
     /** extension.ts 检查是否需要跳过 onDidChangeActiveTextEditor 的行号回传 */
@@ -130,7 +139,7 @@ export class MarkdownEditorProvider
         if (!pending) { return undefined; }
         this._pendingNavigations.delete(fsPath);
         // 超过 5 秒视为过期，不应用
-        if (Date.now() - pending.ts > 5000) { return undefined; }
+        if (Date.now() - pending.ts > PENDING_NAVIGATION_TTL_MS) { return undefined; }
         return pending.line;
     }
 
@@ -236,7 +245,7 @@ export class MarkdownEditorProvider
                 setTimeout(() => {
                     const anyActive = Array.from(this._webviewPanels.values()).some(
                         (panel) => {
-                            try { return panel.active; } catch { return false; }
+                            try { return panel.active; } catch { /* panel 可能已销毁，忽略 */ return false; }
                         },
                     );
                     if (!anyActive) this._statusBarItem.hide();
@@ -274,7 +283,7 @@ export class MarkdownEditorProvider
                     if (vscode.workspace.getConfiguration("epytor").get<boolean>("debugMode", false)) console.log('[viewState] delayed scrollToLine:', delayedLine);
                     p.webview.postMessage({ type: "scrollToLine", line: delayedLine });
                 }
-            }, 1000);
+            }, REVEAL_LINE_DELAYED_CHECK_MS);
         });
 
         webviewPanel.webview.onDidReceiveMessage(
@@ -379,7 +388,7 @@ export class MarkdownEditorProvider
                         this.suppressNavFromTextEditor();
                         // 抑制 onDidChangeTabs 的自动 WYSIWYG 切换（防止切回去）
                         MarkdownEditorProvider.suppressAutoSwitch.add(document.uri.toString());
-                        setTimeout(() => MarkdownEditorProvider.suppressAutoSwitch.delete(document.uri.toString()), 2000);
+                        setTimeout(() => MarkdownEditorProvider.suppressAutoSwitch.delete(document.uri.toString()), AUTO_SWITCH_SUPPRESS_DURATION_MS);
                         const textDoc = await vscode.workspace.openTextDocument(document.uri);
                         const viewCol = webviewPanel.viewColumn;
 
@@ -483,7 +492,7 @@ export class MarkdownEditorProvider
                     debounceTimer = undefined;
                     // 如果是我们自己的自动保存导致的变化（1.5 秒内），跳过
                     const lastSave = this._lastSaveTimes.get(uriKey) ?? 0;
-                    if (Date.now() - lastSave < 1500) { return; }
+                    if (Date.now() - lastSave < SAVE_COOLDOWN_MS) { return; }
                     const cts = new vscode.CancellationTokenSource();
                     try {
                         await document.revert(cts.token);
@@ -496,7 +505,7 @@ export class MarkdownEditorProvider
                     } finally {
                         cts.dispose();
                     }
-                }, 200);
+                }, FS_WATCH_DEBOUNCE_MS);
             });
             // panel 关闭时同步销毁 watcher
             webviewPanel.onDidDispose(() => { fsWatcher.close(); });
@@ -966,6 +975,8 @@ export class MarkdownEditorProvider
             } else {
                 absPath = path.resolve(mdDir, relPath);
             }
+            // 文件不存在时不生成 webviewUri，让 WebView 端超时回退使用原始 relPath
+            if (!fs.existsSync(absPath)) { return; }
             const webviewUri = panel.webview.asWebviewUri(vscode.Uri.file(absPath)).toString();
             // 登记映射供保存时还原
             const uriMap = this._imageUriMaps.get(uriKey) ?? new Map<string, string>();
