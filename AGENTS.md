@@ -60,7 +60,8 @@ webview/components/findBar/index.ts     — 编辑器内查找栏（Cmd/Ctrl+F�
 webview/components/pathLink/            — 路径链接自动补全
 webview/headingIds.ts                    — 标题 id 管理（不操作 DOM，仅保留签名）
 docs/specs/                              — 功能 spec 文档
-docs/roadmap.md                          — 项目路线图
+docs/roadmap.md                          — 项目路线图（面向用户的功能规划）
+docs/tech-debt.md                        — 技术债务清单（面向开发者的代码改进）
 ```
 
 ### 配置参考
