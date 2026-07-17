@@ -232,7 +232,7 @@ function getCellCoords(doc: any, pos: number): { row: number; col: number } | nu
                 }
             }
         }
-    } catch {}
+    } catch { /* 非表格节点或文档结构异常，返回 null */ }
     return null;
 }
 
@@ -314,12 +314,12 @@ const cellClickFixPlugin = $prose(() => {
                                 try {
                                     const p = Math.min(clickPos ?? tr.selection.from, v.state.doc.content.size);
                                     v.dispatch(v.state.tr.setSelection(TextSelection.near(v.state.doc.resolve(p))));
-                                } catch { /* ignore */ }
+                                } catch { /* cellClickTarget 位置无效，不修正选区 */ }
                             });
                             return false;
                         }
                     }
-                } catch { /* ignore */ }
+                } catch { /* 非表格节点内的 $pos 遍历，忽略 */ }
             }
             if (!lastGoodCellSelection) return true;
             if (state.selection instanceof CellSelection && !(tr.selection instanceof CellSelection)) {
@@ -352,12 +352,12 @@ const cellClickFixPlugin = $prose(() => {
                                 for (let d = $a.depth; d >= 0; d--) { if ($a.node(d).type.name === "table_cell" || $a.node(d).type.name === "table_header") { aCellStart = $a.start(d); break; } }
                                 for (let d = $h.depth; d >= 0; d--) { if ($h.node(d).type.name === "table_cell" || $h.node(d).type.name === "table_header") { hCellStart = $h.start(d); break; } }
                                 if (aCellStart !== hCellStart) return null;
-                            } catch { /* ignore */ }
+                            } catch { /* 单元格边界检测失败（文档结构变化），回退为单格光标 */ }
                             return newState.tr.setSelection(TextSelection.create(newState.doc, headP, Math.min(pendingClickPos, newState.doc.content.size)));
                         }
                     }
                     return newState.tr.setSelection(TextSelection.near($pos));
-                } catch { return null; }
+                } catch { /* pos 无效（如节点刚被删除），不修正选区 */ return null; }
             }
 
             return null;

@@ -1,5 +1,6 @@
 import './toc.css';
 import type { EditorView } from "@milkdown/kit/prose/view";
+import { DEFAULT_TOPBAR_HEIGHT, VIEWPORT_PADDING } from "../../../shared/constants";
 import { applyTooltip } from "@/ui/tooltip";
 import { t } from "@/i18n";
 import { IconPin, IconChevronRight, IconChevronDown, IconChevronsUp, IconChevronsDown } from "@/ui/icons";
@@ -238,11 +239,11 @@ export function initToc(getEditorView: () => EditorView | null): {
                     const el = findHeadingElement(v, pos);
                     if (el) {
                         const topbar = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
-                        const topbarH = topbar?.getBoundingClientRect().height ?? 40;
-                        const top = el.getBoundingClientRect().top + window.scrollY - topbarH - 8;
+                        const topbarH = topbar?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
+                        const top = el.getBoundingClientRect().top + window.scrollY - topbarH - VIEWPORT_PADDING;
                         window.scrollTo({ top, behavior: "smooth" });
                     }
-                } catch { /* ignore */ }
+                } catch { /* heading 元素已不在 DOM 中，忽略此次跳转 */ }
             });
 
             item.appendChild(label);
