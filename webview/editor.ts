@@ -11,6 +11,8 @@ import {
     toggleStrongCommand,
     toggleEmphasisCommand,
     toggleInlineCodeCommand,
+    listItemSchema,
+    wrapInBlockTypeCommand,
 } from "@milkdown/kit/preset/commonmark";
 import { toggleStrikethroughCommand } from "@milkdown/kit/preset/gfm";
 import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
@@ -593,7 +595,7 @@ export async function createEditor(
             renderPreview,
             searchPlaceholder: t('Search language...'),
         })
-        .addFeature(cursor)
+        .addFeature(cursor) // 原版虚拟光标（mark 边界方向键/方向指示），z-index 已在 style.css 修复被背景盖住问题
         .addFeature(listItem)
         .addFeature(topBar, {
             headingOptions: [
@@ -716,6 +718,135 @@ export async function createEditor(
                         },
                     });
                     if (hrItem) moreG.addItem('hr', hrItem);
+                }
+                // 列表切换：不在列表 → 包裹；在列表且类型不同 → 直接切换；类型相同 → 取消列表
+                {
+                    const findListItems = (state: EditorState) => {
+                        const liType = state.schema.nodes['list_item'];
+                        const { from, to } = state.selection;
+                        const items: Array<{ pos: number; node: any }> = [];
+                        state.doc.nodesBetween(from, to, (node, pos) => {
+                            if (node.type === liType) items.push({ pos, node });
+                        });
+                        if (!items.length) {
+                            const { $from } = state.selection;
+                            for (let d = $from.depth; d >= 0; d--) {
+                                if ($from.node(d).type === liType) {
+                                    items.push({ pos: $from.before(d), node: $from.node(d) });
+                                    break;
+                                }
+                            }
+                        }
+                        return items;
+                    };
+                    // 找到包含这些 list_item 的顶层列表节点（去重）
+                    const findTopLists = (state: EditorState, items: Array<{ pos: number; node: any }>) => {
+                        const lists: Array<{ pos: number; node: any }> = [];
+                        const seen = new Set<number>();
+                        items.forEach(({ pos }) => {
+                            const $pos = state.doc.resolve(pos);
+                            for (let d = $pos.depth; d >= 0; d--) {
+                                const node = $pos.node(d);
+                                if (node.type.name === 'bullet_list' || node.type.name === 'ordered_list') {
+                                    const listPos = $pos.before(d);
+                                    if (!seen.has(listPos)) {
+                                        seen.add(listPos);
+                                        lists.push({ pos: listPos, node });
+                                    }
+                                    break;
+                                }
+                            }
+                        });
+                        return lists;
+                    };
+                    const listKind = (state: EditorState): 'bullet' | 'ordered' | 'task' | null => {
+                        const items = findListItems(state);
+                        if (!items.length) return null;
+                        const attrs = items[0].node.attrs;
+                        if (attrs.checked != null) return 'task';
+                        return attrs.listType === 'ordered' ? 'ordered' : 'bullet';
+                    };
+                    const toggleList = (target: 'bullet' | 'ordered' | 'task') => (ctx: any) => {
+                        const v = ctx.get(editorViewCtx);
+                        const { state, dispatch } = v;
+                        const schema = state.schema;
+                        const kind = listKind(state);
+                        if (!kind) {
+                            // 不在列表 → 原包裹行为
+                            let nodeType: any = null;
+                            let attrs: any = null;
+                            if (target === 'bullet') nodeType = schema.nodes['bullet_list'];
+                            else if (target === 'ordered') nodeType = schema.nodes['ordered_list'];
+                            else { nodeType = schema.nodes['list_item']; attrs = { checked: false }; }
+                            if (nodeType) ctx.get(commandsCtx).call(wrapInBlockTypeCommand.key, { nodeType, attrs });
+                            return;
+                        }
+                        if (kind === target) {
+                            // 同类型 → 取消/降级（lift 一层）
+                            const liType = schema.nodes['list_item'];
+                            liftListItem(liType)(state, dispatch);
+                            return;
+                        }
+                        // 不同类型 → 换外层列表类型 + 更新 list_item attrs
+                        // 用 setNodeMarkup（不改变节点大小，光标位置自动保留，不会跳行）
+                        const items = findListItems(state);
+                        const lists = findTopLists(state, items);
+                        if (!lists.length) return;
+                        const tr = state.tr;
+                        lists.forEach(({ pos, node }) => {
+                            const newType = target === 'ordered'
+                                ? schema.nodes['ordered_list']
+                                : schema.nodes['bullet_list'];
+                            const newAttrs = { ...node.attrs };
+                            if (target === 'ordered') newAttrs.order = 1;
+                            // 换外层类型（content 保留）
+                            tr.setNodeMarkup(pos, newType, newAttrs);
+                            // 逐个 list_item 更新 attrs
+                            let order = 1;
+                            node.forEach((item: any, _off: number, itemPos: number) => {
+                                const itemAttrs = { ...item.attrs };
+                                if (target === 'bullet') {
+                                    itemAttrs.listType = 'bullet';
+                                    itemAttrs.label = '•';
+                                    itemAttrs.checked = null;
+                                } else if (target === 'ordered') {
+                                    itemAttrs.listType = 'ordered';
+                                    itemAttrs.label = `${order}.`;
+                                    itemAttrs.checked = null;
+                                    order++;
+                                } else { // task
+                                    itemAttrs.checked = false;
+                                    itemAttrs.listType = 'bullet';
+                                    itemAttrs.label = '•';
+                                }
+                                tr.setNodeMarkup(pos + itemPos + 1, undefined, itemAttrs);
+                            });
+                        });
+                        dispatch(tr);
+                    };
+                    const listG = builder.getGroup('list');
+                    const listItems = listG.group.items;
+                    const bulletItem = listItems.find((i: any) => i.key === 'bullet-list');
+                    const orderedItem = listItems.find((i: any) => i.key === 'ordered-list');
+                    const taskItem = listItems.find((i: any) => i.key === 'task-list');
+                    if (bulletItem || orderedItem || taskItem) {
+                        listG.clear();
+                        if (bulletItem) listG.addItem('bullet-list', {
+                            icon: bulletItem.icon,
+                            active: (c: any) => listKind(c.get(editorViewCtx).state) === 'bullet',
+                            onRun: toggleList('bullet'),
+                        });
+                        if (orderedItem) listG.addItem('ordered-list', {
+                            icon: orderedItem.icon,
+                            active: (c: any) => listKind(c.get(editorViewCtx).state) === 'ordered',
+                            onRun: toggleList('ordered'),
+                        });
+                        if (taskItem) listG.addItem('task-list', {
+                            icon: taskItem.icon,
+                            active: (c: any) => listKind(c.get(editorViewCtx).state) === 'task',
+                            onRun: toggleList('task'),
+                        });
+                    }
                 }
                 // 目录切换 — 设置前独立组
                 builder.addGroup('toc', '').addItem('toc', {
