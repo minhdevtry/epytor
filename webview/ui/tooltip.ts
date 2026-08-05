@@ -1,3 +1,7 @@
+// ─── 常量 ────────────────────────────────────────────────────
+const TOOLTIP_SPACING_PX = 6;
+const TOOLTIP_VIEWPORT_MARGIN_PX = 4;
+
 let tooltipEl: HTMLElement | null = null;
 
 function getTooltip(): HTMLElement {
@@ -38,22 +42,22 @@ function position(
     let y: number;
 
     if (placement === "above") {
-        y = elRect.top - tipRect.height - 6;
-        if (y < 4) {
-            y = elRect.bottom + 6;
+        y = elRect.top - tipRect.height - TOOLTIP_SPACING_PX;
+        if (y < TOOLTIP_VIEWPORT_MARGIN_PX) {
+            y = elRect.bottom + TOOLTIP_SPACING_PX;
         } // 上方不够则降到下方
     } else {
-        y = elRect.bottom + 6;
-        if (y + tipRect.height > window.innerHeight - 4) {
-            y = elRect.top - tipRect.height - 6;
+        y = elRect.bottom + TOOLTIP_SPACING_PX;
+        if (y + tipRect.height > window.innerHeight - TOOLTIP_VIEWPORT_MARGIN_PX) {
+            y = elRect.top - tipRect.height - TOOLTIP_SPACING_PX;
         }
     }
 
-    if (x + tipRect.width > window.innerWidth - 4) {
-        x = window.innerWidth - tipRect.width - 4;
+    if (x + tipRect.width > window.innerWidth - TOOLTIP_VIEWPORT_MARGIN_PX) {
+        x = window.innerWidth - tipRect.width - TOOLTIP_VIEWPORT_MARGIN_PX;
     }
-    if (x < 4) {
-        x = 4;
+    if (x < TOOLTIP_VIEWPORT_MARGIN_PX) {
+        x = TOOLTIP_VIEWPORT_MARGIN_PX;
     }
 
     tip.style.left = `${x}px`;

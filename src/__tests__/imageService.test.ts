@@ -234,6 +234,28 @@ describe("saveImageLocally — MD5 去重", () => {
         expect(mockFs.readFile).not.toHaveBeenCalled();
         expect(mockFs.writeFile).toHaveBeenCalledOnce();
     });
+
+    it("目录枚举失败时 应该 跳过去重并写入新文件", async () => {
+        mockFs.readDirectory.mockRejectedValue(new Error("EPERM"));
+
+        const cfg = makeCfg();
+        await saveImageLocally(docUri, cfg as never, imageData, "image/png", "photo");
+
+        expect(mockFs.writeFile).toHaveBeenCalledOnce();
+    });
+
+    it("目录项不是文件时 应该 跳过内容读取", async () => {
+        mockFs.stat.mockResolvedValue({ type: vscode.FileType.Directory });
+        mockFs.readDirectory.mockResolvedValue([
+            ["nested", vscode.FileType.Directory],
+        ]);
+
+        const cfg = makeCfg();
+        await saveImageLocally(docUri, cfg as never, imageData, "image/png", "photo");
+
+        expect(mockFs.readFile).not.toHaveBeenCalled();
+        expect(mockFs.writeFile).toHaveBeenCalledOnce();
+    });
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -515,6 +537,31 @@ describe("uploadImageToServer", () => {
         await expect(
             uploadImageToServer(cfg as never, imageData, "image/png", "photo"),
         ).rejects.toThrow("ECONNREFUSED");
+    });
+
+    it("请求超过 30 秒时 应该 销毁请求并抛出超时错误", async () => {
+        const errorHandlers: Array<(error: Error) => void> = [];
+        const mockReq = {
+            on: vi.fn((event: string, callback: unknown) => {
+                if (event === "error") {
+                    errorHandlers.push(callback as (error: Error) => void);
+                }
+            }),
+            setTimeout: vi.fn((_delay: number, callback: () => void) => callback()),
+            write: vi.fn(),
+            end: vi.fn(),
+            destroy: vi.fn((error: Error) => {
+                errorHandlers.forEach((handler) => handler(error));
+            }),
+        };
+        vi.mocked(https.request).mockImplementation(() => mockReq as never);
+        const cfg = makeCfg({ imageServerUrl: "https://upload.example.com/api" });
+
+        await expect(
+            uploadImageToServer(cfg as never, imageData, "image/png", "photo"),
+        ).rejects.toThrow("Upload request timed out after 30s");
+        expect(mockReq.setTimeout).toHaveBeenCalledWith(30000, expect.any(Function));
+        expect(mockReq.destroy).toHaveBeenCalledOnce();
     });
 
     it("嵌套 responsePath（如 data.url）正确提取 URL", async () => {

@@ -69,6 +69,17 @@ describe("MarkdownDocument", () => {
         });
     });
 
+    describe("saveAs()", () => {
+        it("CancellationToken 已取消时 应该 跳过目标文件写入", async () => {
+            mockFs.readFile.mockResolvedValue(Buffer.from("initial", "utf-8"));
+            const doc = await MarkdownDocument.create(makeUri("/project/note.md"));
+
+            await doc.saveAs(makeUri("/project/copy.md"), makeCancellation(true));
+
+            expect(mockFs.writeFile).not.toHaveBeenCalled();
+        });
+    });
+
     describe("revert()", () => {
         it("revert() 后 getText() 返回磁盘最新内容", async () => {
             mockFs.readFile
@@ -118,6 +129,15 @@ describe("MarkdownDocument", () => {
             mockFs.readFile.mockResolvedValue(Buffer.from("", "utf-8"));
             const doc = await MarkdownDocument.create(uri);
             expect(doc.uri.fsPath).toBe(uri.fsPath);
+        });
+    });
+
+    describe("dispose()", () => {
+        it("文档释放时 应该 正常完成", async () => {
+            mockFs.readFile.mockResolvedValue(Buffer.from("", "utf-8"));
+            const doc = await MarkdownDocument.create(makeUri("/project/note.md"));
+
+            expect(() => doc.dispose()).not.toThrow();
         });
     });
 });
