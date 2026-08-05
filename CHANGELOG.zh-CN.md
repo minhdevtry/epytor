@@ -3,6 +3,23 @@
 本项目的所有重要变更都将记录在此文件中。
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## [1.1.6] - 2026-08-06
+
+### 新增
+
+- **列表切换**：无序/有序/任务按钮可直接互相切换（有序号自动重排）；点击当前类型回到段落
+
+### 修复
+
+- **Milkdown 7.22.0 升级后列表/引用按钮失效**：依赖树中多个 `prosemirror-model` 版本共存（1.25.4 / 1.25.9 / 1.25.11），导致 `tr.wrap` 抛异常；通过 `pnpm-workspace.yaml` overrides 将所有 prosemirror 包固定到单一版本链
+- **引用块/行内代码内虚拟光标不可见**：`prosemirror-virtual-cursor` 渲染的光标缺 z-index，被节点背景遮挡
+- **添加新列表按钮无效**：切换处理器中漏导入 `wrapInBlockTypeCommand`
+- **列表切换时光标换行**：改用 `setNodeMarkup`（节点大小不变）而非重建列表节点
+
+### 变更
+
+- **打包**：`.vscodeignore` 排除 `pnpm-workspace.yaml`、`coverage/`、`scripts/`
+
 ## [1.1.5] - 2026-08-05
 
 ### 变更
