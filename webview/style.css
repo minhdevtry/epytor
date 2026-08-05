@@ -127,10 +127,45 @@ body {
     font-size: var(--vscode-editor-font-size, 14px) !important;
 }
 
-/* 虚拟光标 */
+/* 虚拟光标（原版 prosemirror-virtual-cursor）
+   注意：原版 Decoration.widget(0) 把光标渲染在文档开头且无 z-index，
+   引用块/行内代码等带背景色的节点会盖住它 → 光标看不见。
+   修复：z-index 提升 + 原版全部功能（mark 边界方向键、方向指示）保留 */
 .milkdown .ProseMirror.virtual-cursor-enabled {
     caret-color: transparent;
-    --prosemirror-virtual-cursor-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground));
+    --prosemirror-virtual-cursor-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground, #fff));
+}
+.milkdown .ProseMirror .prosemirror-virtual-cursor {
+    position: absolute;
+    z-index: 1; /* 关键：盖过带背景色的 blockquote/code 等节点 */
+    cursor: text;
+    pointer-events: none;
+    transform: translate(-1px);
+    user-select: none;
+    -webkit-user-select: none;
+    border-left: 2px solid var(--prosemirror-virtual-cursor-color);
+}
+.milkdown .ProseMirror .prosemirror-virtual-cursor-left {
+    width: 1ch;
+    transform: translate(calc(-1ch + -1px));
+    border-bottom: 2px solid var(--prosemirror-virtual-cursor-color);
+    border-right: 2px solid var(--prosemirror-virtual-cursor-color);
+    border-left: none;
+}
+.milkdown .ProseMirror .prosemirror-virtual-cursor-right {
+    width: 1ch;
+    border-bottom: 2px solid var(--prosemirror-virtual-cursor-color);
+    border-left: 2px solid var(--prosemirror-virtual-cursor-color);
+    border-right: none;
+}
+.milkdown .ProseMirror .prosemirror-virtual-cursor-animation {
+    animation: prosemirror-virtual-cursor-blink 1s linear infinite;
+    animation-delay: 0.5s;
+}
+@keyframes prosemirror-virtual-cursor-blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
 }
 
 /* Crepe 按钮/输入框基础重置（原 reset.css 提供，去掉 reset.css 后补上）*/

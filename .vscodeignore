@@ -10,5 +10,8 @@ test/**
 tsconfig*.json
 esbuild.mjs
 pnpm-lock.yaml
+pnpm-workspace.yaml
+coverage/**
+scripts/**
 **/*.map
 **/*.ts
