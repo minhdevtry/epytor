@@ -582,13 +582,21 @@ function enhanceCodeBlocks(container: HTMLElement): void {
 
             const lb = document.createElement('div');
             lb.className = 'epytor-fs-lightbox';
-            lb.innerHTML = `<div class="epytor-fs-header">
-                <span class="epytor-fs-lang">${lang}</span>
-                <button class="epytor-fs-close">✕</button>
-            </div>
-            <div class="epytor-fs-body"></div>`;
+            const header = document.createElement('div');
+            header.className = 'epytor-fs-header';
+            const langSpan = document.createElement('span');
+            langSpan.className = 'epytor-fs-lang';
+            langSpan.textContent = lang;  // 安全注入，避免 XSS
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'epytor-fs-close';
+            closeBtn.textContent = '✕';
+            header.appendChild(langSpan);
+            header.appendChild(closeBtn);
+            const body = document.createElement('div');
+            body.className = 'epytor-fs-body';
+            lb.appendChild(header);
+            lb.appendChild(body);
             document.body.appendChild(lb);
-            const body = lb.querySelector('.epytor-fs-body') as HTMLElement;
             body.appendChild(cmEditor);
             if (previewPanel) body.appendChild(previewPanel);
 
