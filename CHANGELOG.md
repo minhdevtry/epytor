@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.5] - 2026-08-05
+
+### Changed
+
+- **Extension icon**: new logo
+- **Dependencies**: upgraded to fix security vulnerabilities
+  - Milkdown 7.21.3 → 7.22.0, Mermaid 11.15.0 → 11.16.1
+  - vsce 2.32 → 3.9.2, Vitest 2 → 4, Vite 5 → 6, esbuild 0.24 → 0.28
+- **Test config**: migrated `vitest.workspace.ts` to `projects` (Vitest 4)
+
+### Fixed
+
+- **Top bar heading dropdown clipped**: overflow clipping removed
+
 ## [1.1.3] - 2026-07-16
 
 ### Changed

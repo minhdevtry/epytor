@@ -3,6 +3,20 @@
 本项目的所有重要变更都将记录在此文件中。
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## [1.1.5] - 2026-08-05
+
+### 变更
+
+- **扩展图标**：更换新 logo
+- **依赖升级**：修复安全漏洞
+  - Milkdown 7.21.3 → 7.22.0、Mermaid 11.15.0 → 11.16.1
+  - vsce 2.32 → 3.9.2、Vitest 2 → 4、Vite 5 → 6、esbuild 0.24 → 0.28
+- **测试配置**：`vitest.workspace.ts` 迁移为 `projects` 配置（适配 Vitest 4）
+
+### 修复
+
+- **顶栏标题下拉菜单被裁剪**：去除 overflow 裁剪
+
 ## [1.1.3] - 2026-07-16
 
 ### 变更
