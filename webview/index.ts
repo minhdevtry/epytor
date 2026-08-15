@@ -364,6 +364,7 @@ async function initEditor(
         container,
         markdown,
         (updated) => {
+            markdownSource = updated;
             notifyUpdate(updated);
             if (typeof window.requestIdleCallback === "function") {
                 window.requestIdleCallback(() => {
@@ -929,6 +930,11 @@ onMessage(async (msg) => {
             // Already bootstrapped directly from injected DOM data
             return;
         }
+        if (msg.type === "revert" && currentEditor && msg.content === markdownSource) {
+            // Revert content is identical to what webview already has, preserve editor instance & undo history
+            return;
+        }
+        markdownSource = msg.content;
         await bootstrapInitialView(msg);
     } else if (msg.type === "requestSwitchToTextEditor") {
         // "Switch to text editor" request from the menu button / command palette

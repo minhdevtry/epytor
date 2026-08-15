@@ -9,7 +9,8 @@ export class DocumentSyncService {
     private static _lastSavedHashes = new Map<string, string>();
 
     public static recordSavedContent(uriKey: string, content: string): void {
-        const hash = crypto.createHash("md5").update(content).digest("hex");
+        const normalized = content.replace(/\r\n/g, "\n");
+        const hash = crypto.createHash("md5").update(normalized).digest("hex");
         this._lastSavedHashes.set(uriKey, hash);
     }
 
@@ -42,7 +43,8 @@ export class DocumentSyncService {
                     try {
                         const bytes = await vscode.workspace.fs.readFile(document.uri);
                         const fileContent = Buffer.from(bytes).toString("utf-8");
-                        const currentFileHash = crypto.createHash("md5").update(fileContent).digest("hex");
+                        const normalized = fileContent.replace(/\r\n/g, "\n");
+                        const currentFileHash = crypto.createHash("md5").update(normalized).digest("hex");
                         const lastSavedHash = DocumentSyncService._lastSavedHashes.get(uriKey);
 
                         // If file hash is identical to our last saved version, skip revert
