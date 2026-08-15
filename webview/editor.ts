@@ -30,7 +30,7 @@ import { topBar } from "@milkdown/crepe/feature/top-bar";
 import { toolbar } from "@milkdown/crepe/feature/toolbar";
 import { Compartment } from "@codemirror/state";
 import { EditorView as CMEditorView } from "@codemirror/view";
-import { HighlightStyle, syntaxHighlighting, LanguageDescription, StreamLanguage, type LanguageSupport } from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting, LanguageDescription, StreamLanguage, LanguageSupport } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
@@ -139,7 +139,7 @@ const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Bash",
         alias: ["bash", "sh", "zsh", "shell", "curl"],
-        support: StreamLanguage.define(shell),
+        support: new LanguageSupport(StreamLanguage.define(shell)),
     }),
     LanguageDescription.of({
         name: "SQL",
@@ -179,7 +179,7 @@ const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Go",
         alias: ["go"],
-        support: StreamLanguage.define(go),
+        support: go(),
     }),
     LanguageDescription.of({
         name: "Java",
