@@ -46,6 +46,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.43.1
         version: 6.43.1
+      '@lezer/highlight':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@milkdown/crepe':
         specifier: 7.22.1
         version: 7.22.1(patch_hash=69721a8cf8c123b9079414123970cfb9d2cfc0d1491dbe99f3ae8103ac92c3d4)(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(typescript@5.9.3)

@@ -30,8 +30,8 @@ import { topBar } from "@milkdown/crepe/feature/top-bar";
 import { toolbar } from "@milkdown/crepe/feature/toolbar";
 import { Compartment } from "@codemirror/state";
 import { EditorView as CMEditorView } from "@codemirror/view";
-import { oneDark } from "@codemirror/theme-one-dark";
-import { defaultHighlightStyle, syntaxHighlighting, LanguageDescription, type LanguageSupport } from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting, LanguageDescription, type LanguageSupport } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 import { languages as allCodeLanguages } from "@codemirror/language-data";
 import mermaid from "mermaid";
 import { onThemeChange } from "./utils/themeBus";
@@ -244,10 +244,54 @@ export async function createEditor(
         defaultValue: initialMarkdown,
     });
 
+    const lightHighlightStyle = HighlightStyle.define([
+        { tag: tags.keyword, color: "#a626a4", fontWeight: "600" },
+        { tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName], color: "#e45649" },
+        { tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.labelName], color: "#4078f2", fontWeight: "500" },
+        { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)], color: "#986801" },
+        { tag: [tags.definition(tags.name), tags.separator], color: "#383a42" },
+        { tag: [tags.typeName, tags.className, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace], color: "#c18401" },
+        { tag: [tags.number, tags.integer, tags.float, tags.bool], color: "#986801", fontWeight: "500" },
+        { tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.special(tags.string)], color: "#0184bc" },
+        { tag: [tags.meta, tags.comment], color: "#a0a1a7", fontStyle: "italic" },
+        { tag: tags.strong, fontWeight: "bold" },
+        { tag: tags.emphasis, fontStyle: "italic" },
+        { tag: tags.strikethrough, textDecoration: "line-through" },
+        { tag: tags.link, color: "#4078f2", textDecoration: "underline" },
+        { tag: tags.heading, fontWeight: "bold", color: "#a626a4" },
+        { tag: [tags.atom, tags.bool, tags.special(tags.variableName)], color: "#986801" },
+        { tag: [tags.processingInstruction, tags.string, tags.inserted], color: "#50a14f" },
+        { tag: tags.invalid, color: "#ffffff", backgroundColor: "#e45649" },
+    ]);
+
+    const darkHighlightStyle = HighlightStyle.define([
+        { tag: tags.keyword, color: "#c678dd", fontWeight: "600" },
+        { tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName], color: "#e06c75" },
+        { tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.labelName], color: "#61afef", fontWeight: "500" },
+        { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)], color: "#d19a66" },
+        { tag: [tags.definition(tags.name), tags.separator], color: "#abb2bf" },
+        { tag: [tags.typeName, tags.className, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace], color: "#e5c07b" },
+        { tag: [tags.number, tags.integer, tags.float, tags.bool], color: "#d19a66", fontWeight: "500" },
+        { tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.special(tags.string)], color: "#56b6c2" },
+        { tag: [tags.meta, tags.comment], color: "#7f848e", fontStyle: "italic" },
+        { tag: tags.strong, fontWeight: "bold" },
+        { tag: tags.emphasis, fontStyle: "italic" },
+        { tag: tags.strikethrough, textDecoration: "line-through" },
+        { tag: tags.link, color: "#61afef", textDecoration: "underline" },
+        { tag: tags.heading, fontWeight: "bold", color: "#c678dd" },
+        { tag: [tags.atom, tags.bool, tags.special(tags.variableName)], color: "#d19a66" },
+        { tag: [tags.processingInstruction, tags.string, tags.inserted], color: "#98c379" },
+        { tag: tags.invalid, color: "#ffffff", backgroundColor: "#e06c75" },
+    ]);
+
+    let isDark = typeof document !== 'undefined'
+        ? (document.body.classList.contains("vscode-dark") || document.body.classList.contains("vscode-high-contrast"))
+        : true;
+
     const cmTheme = new Compartment();
     const getCMTheme = (dark?: boolean) => {
         const isDarkTheme = dark ?? isDark;
-        return isDarkTheme ? oneDark : syntaxHighlighting(defaultHighlightStyle);
+        return syntaxHighlighting(isDarkTheme ? darkHighlightStyle : lightHighlightStyle, { fallback: true });
     };
 
     const reconfigureAllCM = () => {
@@ -261,8 +305,6 @@ export async function createEditor(
         if (document.querySelector(".cm-editor")) setTimeout(reconfigureAllCM, 10);
     });
     cmObserver.observe(container, { childList: true, subtree: true });
-
-    let isDark = true;
     const mermaidCodeMap = new Map<string, string>();
     let mermaidSeq = 0;
 
