@@ -1170,41 +1170,34 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     content: none !important;
 }
 
-/* Callout Header Badge */
-.milkdown .ProseMirror .callout-header-badge {
+/* Callout Unified Badge Tag (Thay thế hoàn toàn [!TAG] thô bằng 1 Badge duy nhất) */
+.milkdown .ProseMirror .callout-badge-tag {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    font-size: 0 !important; /* Ẩn text thô [!TAG] */
+    padding: 2px 7px !important;
+    border-radius: 4px !important;
+    margin-right: 8px !important;
+    user-select: none !important;
+    vertical-align: middle !important;
+    line-height: 1.3 !important;
+    font-family: var(--vscode-editor-font-family, sans-serif) !important;
+}
+
+.milkdown .ProseMirror .callout-badge-tag::after {
+    content: attr(data-icon) " " attr(data-title);
     font-size: 11.5px !important;
     font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.6px !important;
-    padding: 2px 8px !important;
-    border-radius: 4px !important;
-    margin-bottom: 6px !important;
-    user-select: none !important;
-    line-height: 1.4 !important;
 }
 
-.callout-badge-note { color: #3b82f6 !important; background: rgba(59, 130, 246, 0.15) !important; }
-.callout-badge-tip { color: #10b981 !important; background: rgba(16, 185, 129, 0.15) !important; }
-.callout-badge-warning { color: #f59e0b !important; background: rgba(245, 158, 11, 0.15) !important; }
-.callout-badge-caution { color: #ef4444 !important; background: rgba(239, 68, 68, 0.15) !important; }
-.callout-badge-success { color: #22c55e !important; background: rgba(34, 197, 94, 0.15) !important; }
-.callout-badge-important { color: #a855f7 !important; background: rgba(168, 85, 247, 0.15) !important; }
-
-/* Hiển thị tag [!TAG] dưới dạng pill tag trang nhã, tránh lỗi nhảy con trỏ của contentEditable */
-.milkdown .ProseMirror .callout-tag-hidden {
-    display: inline-block !important;
-    font-size: 11px !important;
-    font-family: var(--vscode-editor-font-family, monospace) !important;
-    opacity: 0.55 !important;
-    background: rgba(128, 128, 128, 0.18) !important;
-    padding: 1px 5px !important;
-    border-radius: 4px !important;
-    margin-right: 6px !important;
-    vertical-align: middle !important;
-}
+.callout-badge-tag-note { color: #2563eb !important; background: rgba(37, 99, 235, 0.12) !important; border: 1px solid rgba(37, 99, 235, 0.25) !important; }
+.callout-badge-tag-tip { color: #059669 !important; background: rgba(5, 150, 105, 0.12) !important; border: 1px solid rgba(5, 150, 105, 0.25) !important; }
+.callout-badge-tag-warning { color: #d97706 !important; background: rgba(217, 119, 6, 0.12) !important; border: 1px solid rgba(217, 119, 6, 0.25) !important; }
+.callout-badge-tag-caution { color: #dc2626 !important; background: rgba(220, 38, 38, 0.12) !important; border: 1px solid rgba(220, 38, 38, 0.25) !important; }
+.callout-badge-tag-success { color: #16a34a !important; background: rgba(22, 163, 74, 0.12) !important; border: 1px solid rgba(22, 163, 74, 0.25) !important; }
+.callout-badge-tag-important { color: #9333ea !important; background: rgba(147, 51, 234, 0.12) !important; border: 1px solid rgba(147, 51, 234, 0.25) !important; }
 
 /* 1. Note / Info (Blue) */
 .milkdown .ProseMirror blockquote.callout-note {
