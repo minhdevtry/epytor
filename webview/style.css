@@ -201,8 +201,30 @@ body {
 .milkdown .ProseMirror .html-inline {
     display: contents;
 }
-.milkdown .ProseMirror .html-inline [align="center"] {
-    text-align: center;
+
+/* Text alignment styles */
+.milkdown .ProseMirror [align="center"],
+.milkdown .ProseMirror .epytor-align-center,
+.milkdown .ProseMirror .align-center {
+    text-align: center !important;
+}
+
+.milkdown .ProseMirror [align="right"],
+.milkdown .ProseMirror .epytor-align-right,
+.milkdown .ProseMirror .align-right {
+    text-align: right !important;
+}
+
+.milkdown .ProseMirror [align="justify"],
+.milkdown .ProseMirror .epytor-align-justify,
+.milkdown .ProseMirror .align-justify {
+    text-align: justify !important;
+}
+
+.milkdown .ProseMirror [align="left"],
+.milkdown .ProseMirror .epytor-align-left,
+.milkdown .ProseMirror .align-left {
+    text-align: left !important;
 }
 
 /* Paragraph */

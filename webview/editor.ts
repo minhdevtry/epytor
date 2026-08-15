@@ -46,6 +46,10 @@ import {
     TbGear,
     TbToc,
     TbHighlighter,
+    TbAlignLeft,
+    TbAlignCenter,
+    TbAlignRight,
+    TbAlignJustify,
     IconAlertCircle,
     IconInfo,
     IconLightbulb,
@@ -70,6 +74,7 @@ import { listLiftPlugin } from "./plugins/listLiftPlugin";
 import { formatKeymapPlugin } from "./plugins/formatKeymapPlugin";
 import { selectionPlugin, registerSelectionChangeHandler } from "./plugins/selectionPlugin";
 import { imagePastePlugin } from "./plugins/imagePastePlugin";
+import { textAlignPlugin, getActiveAlignment, setBlockAlignment } from "./plugins/textAlignPlugin";
 
 // ─── Modals ─────────────────────────────────────────────────────────────────
 import { showMermaidZoomModal } from "./ui/modals/mermaidZoomModal";
@@ -579,6 +584,27 @@ export async function createEditor(
                         showHighlightColorPalette(null, ctx);
                     },
                 });
+                builder.addGroup('align', '').addItem('align-left', {
+                    icon: TbAlignLeft,
+                    label: t('Align left') || 'Align left',
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'left',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'left'),
+                }).addItem('align-center', {
+                    icon: TbAlignCenter,
+                    label: t('Align center') || 'Align center',
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'center',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'center'),
+                }).addItem('align-right', {
+                    icon: TbAlignRight,
+                    label: t('Align right') || 'Align right',
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'right',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'right'),
+                }).addItem('align-justify', {
+                    icon: TbAlignJustify,
+                    label: t('Align justify') || 'Align justify',
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'justify',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'justify'),
+                });
             },
         })
         .addFeature(topBar, {
@@ -601,6 +627,25 @@ export async function createEditor(
                     icon: TbRedo,
                     active: (ctx: Ctx) => redo(ctx.get(editorViewCtx).state),
                     onRun: (ctx: Ctx) => { const v = ctx.get(editorViewCtx); redo(v.state, v.dispatch, v); },
+                });
+
+                // Align Group
+                builder.addGroup('align', '').addItem('align-left', {
+                    icon: TbAlignLeft,
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'left',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'left'),
+                }).addItem('align-center', {
+                    icon: TbAlignCenter,
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'center',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'center'),
+                }).addItem('align-right', {
+                    icon: TbAlignRight,
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'right',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'right'),
+                }).addItem('align-justify', {
+                    icon: TbAlignJustify,
+                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'justify',
+                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'justify'),
                 });
 
                 // Clear formatting
@@ -899,7 +944,8 @@ export async function createEditor(
         .use(formatKeymapPlugin)
         .use(cellClickFixPlugin)
         .use(listSpreadNormalizePlugin)
-        .use(imagePastePlugin);
+        .use(imagePastePlugin)
+        .use(textAlignPlugin);
 
     crepe.on((api) => {
         api.markdownUpdated((_ctx, markdown) => {
