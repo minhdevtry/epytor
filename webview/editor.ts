@@ -403,11 +403,11 @@ export async function createEditor(
                             const bq = view.state.schema.nodes.blockquote;
                             const p = view.state.schema.nodes.paragraph;
                             if (!bq || !p) return;
-                            const textNode = view.state.schema.text(`[!${tag}] `);
-                            const paraNode = p.create(null, textNode);
-                            const calloutNode = bq.create(null, paraNode);
+                            const tagPara = p.create(null, view.state.schema.text(`[!${tag}]`));
+                            const contentPara = p.create(null);
+                            const calloutNode = bq.create(null, [tagPara, contentPara]);
                             const tr = view.state.tr.replaceSelectionWith(calloutNode);
-                            const targetPos = tr.mapping.map(view.state.selection.from) + paraNode.nodeSize - 1;
+                            const targetPos = tr.mapping.map(view.state.selection.from) + tagPara.nodeSize + 1;
                             tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(targetPos, tr.doc.content.size))));
                             view.dispatch(tr);
                             view.focus();

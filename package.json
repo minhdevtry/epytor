@@ -260,7 +260,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "@milkdown/crepe": "patches/@milkdown__crepe.patch"
+      "@milkdown/crepe": "patches/@milkdown__crepe.patch",
+      "@milkdown/plugin-slash": "patches/@milkdown__plugin-slash.patch"
     }
   }
 }

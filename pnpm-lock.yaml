@@ -23,6 +23,9 @@ patchedDependencies:
   '@milkdown/crepe':
     hash: 69721a8cf8c123b9079414123970cfb9d2cfc0d1491dbe99f3ae8103ac92c3d4
     path: patches/@milkdown__crepe.patch
+  '@milkdown/plugin-slash':
+    hash: 83ec9527d89ed9ef1ee59edc6e67759b2b8e451b197b97a0d54383df608bc2e5
+    path: patches/@milkdown__plugin-slash.patch
 
 importers:
 
@@ -3824,7 +3827,7 @@ snapshots:
       '@milkdown/plugin-history': 7.22.1
       '@milkdown/plugin-indent': 7.22.1
       '@milkdown/plugin-listener': 7.22.1
-      '@milkdown/plugin-slash': 7.22.1
+      '@milkdown/plugin-slash': 7.22.1(patch_hash=83ec9527d89ed9ef1ee59edc6e67759b2b8e451b197b97a0d54383df608bc2e5)
       '@milkdown/plugin-streaming': 7.22.1
       '@milkdown/plugin-tooltip': 7.22.1
       '@milkdown/plugin-trailing': 7.22.1
@@ -3854,7 +3857,7 @@ snapshots:
       '@milkdown/plugin-history': 7.22.1
       '@milkdown/plugin-indent': 7.22.1
       '@milkdown/plugin-listener': 7.22.1
-      '@milkdown/plugin-slash': 7.22.1
+      '@milkdown/plugin-slash': 7.22.1(patch_hash=83ec9527d89ed9ef1ee59edc6e67759b2b8e451b197b97a0d54383df608bc2e5)
       '@milkdown/plugin-streaming': 7.22.1
       '@milkdown/plugin-tooltip': 7.22.1
       '@milkdown/plugin-trailing': 7.22.1
@@ -3938,7 +3941,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@milkdown/plugin-slash@7.22.1':
+  '@milkdown/plugin-slash@7.22.1(patch_hash=83ec9527d89ed9ef1ee59edc6e67759b2b8e451b197b97a0d54383df608bc2e5)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@milkdown/ctx': 7.22.1

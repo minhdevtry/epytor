@@ -1028,11 +1028,19 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     width: 18px !important;
     height: 18px !important;
     color: var(--vscode-editor-foreground) !important;
-    fill: var(--vscode-editor-foreground) !important;
+    stroke: currentColor !important;
+}
+.milkdown .milkdown-toolbar .toolbar-item svg path,
+.milkdown .milkdown-toolbar .toolbar-item svg line,
+.milkdown .milkdown-toolbar .toolbar-item svg polyline,
+.milkdown .milkdown-toolbar .toolbar-item svg rect,
+.milkdown .milkdown-toolbar .toolbar-item svg circle {
+    stroke: currentColor !important;
+    fill: none !important;
 }
 .milkdown .milkdown-toolbar .toolbar-item.active svg {
     color: var(--vscode-focusBorder, #007acc) !important;
-    fill: var(--vscode-focusBorder, #007acc) !important;
+    stroke: var(--vscode-focusBorder, #007acc) !important;
 }
 .milkdown .milkdown-toolbar .divider {
     width: 1px;
@@ -1185,13 +1193,17 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 .callout-badge-success { color: #22c55e !important; background: rgba(34, 197, 94, 0.15) !important; }
 .callout-badge-important { color: #a855f7 !important; background: rgba(168, 85, 247, 0.15) !important; }
 
-/* Ẩn hoàn toàn chữ [!TAG] khỏi giao diện */
+/* Hiển thị tag [!TAG] dưới dạng pill tag trang nhã, tránh lỗi nhảy con trỏ của contentEditable */
 .milkdown .ProseMirror .callout-tag-hidden {
-    display: none !important;
-    font-size: 0 !important;
-    height: 0 !important;
-    width: 0 !important;
-    visibility: hidden !important;
+    display: inline-block !important;
+    font-size: 11px !important;
+    font-family: var(--vscode-editor-font-family, monospace) !important;
+    opacity: 0.55 !important;
+    background: rgba(128, 128, 128, 0.18) !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    margin-right: 6px !important;
+    vertical-align: middle !important;
 }
 
 /* 1. Note / Info (Blue) */
