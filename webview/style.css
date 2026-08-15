@@ -1,4 +1,4 @@
-/* 全局重置，使用 VSCode 编辑器主题变量 */
+/* Global reset, using VSCode editor theme variables */
 * {
     box-sizing: border-box;
 }
@@ -28,8 +28,8 @@ body {
     --epytor-topbar-height: 36px;
 }
 
-/* 编辑器容器 */
-/* ─── Frontmatter 面板 ─── */
+/* Editor container */
+/* ─── Frontmatter panel ─── */
 .frontmatter-panel {
     max-width: var(--editor-max-width, min(1400px, 92vw));
     margin: 0 auto;
@@ -71,10 +71,10 @@ body {
 }
 
 #editor {
-    /* 用户未设置 editorMaxWidth 时：自适应视口宽度
-       - 小屏：92vw 先收窄，永不超出
-       - 大屏（2K/4K）：1400px 封顶，保持舒适阅读列宽
-       用户在设置中显式设定宽度时，--editor-max-width 生效，覆盖默认 */
+    /* When the user has not set editorMaxWidth: adapt to viewport width
+       - Small screens: 92vw first to narrow, never overflow
+       - Large screens (2K/4K): capped at 1400px, keep a comfortable reading column width
+       When the user explicitly sets the width in settings, --editor-max-width takes effect and overrides the default */
     max-width: var(--editor-max-width, min(1400px, 92vw));
     margin: 0 auto;
     padding: calc(var(--epytor-topbar-height, 36px) + 16px) 48px 80px;
@@ -82,12 +82,12 @@ body {
     outline: none;
 }
 
-/* Milkdown 根容器 */
+/* Milkdown root container */
 .milkdown {
     position: relative;
     outline: none;
 
-    /* 覆盖 Crepe 主题变量 → 联动 VSCode 主题 */
+    /* Override Crepe theme variables → link to the VSCode theme */
     --crepe-color-background: var(--vscode-editor-background);
     --crepe-color-on-background: var(--vscode-editor-foreground);
     --crepe-color-surface: var(--vscode-editorWidget-background, var(--vscode-editor-background));
@@ -108,7 +108,7 @@ body {
     --crepe-shadow-1: 0 1px 3px color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
     --crepe-shadow-2: 0 2px 6px color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
 
-    /* 字体：覆盖 Crepe 的 serif/sans，统一用 VSCode 编辑器字体 */
+    /* Font: override Crepe's serif/sans, unify with the VSCode editor font */
     --crepe-font-default: var(
         --custom-font-family,
         "PingFang SC", "Microsoft YaHei", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
@@ -120,7 +120,7 @@ body {
     --crepe-font-code: var(--vscode-editor-font-family, monospace);
 }
 
-/* 确保 .milkdown 及子元素继承 VSCode 字体 */
+/* Make sure .milkdown and its children inherit the VSCode font */
 .milkdown,
 .milkdown .ProseMirror {
     font-family: var(
@@ -131,17 +131,17 @@ body {
     font-size: var(--vscode-editor-font-size, 14px) !important;
 }
 
-/* 虚拟光标（原版 prosemirror-virtual-cursor）
-   注意：原版 Decoration.widget(0) 把光标渲染在文档开头且无 z-index，
-   引用块/行内代码等带背景色的节点会盖住它 → 光标看不见。
-   修复：z-index 提升 + 原版全部功能（mark 边界方向键、方向指示）保留 */
+/* Virtual cursor (original prosemirror-virtual-cursor)
+   Note: the original Decoration.widget(0) renders the cursor at the start of the document with no z-index,
+   nodes with backgrounds (such as blockquote/inline code) cover it → the cursor is invisible.
+   Fix: bump z-index + keep all original features (mark boundary arrow keys, direction indicator) */
 .milkdown .ProseMirror.virtual-cursor-enabled {
     caret-color: transparent;
     --prosemirror-virtual-cursor-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground, #fff));
 }
 .milkdown .ProseMirror .prosemirror-virtual-cursor {
     position: absolute;
-    z-index: 1; /* 关键：盖过带背景色的 blockquote/code 等节点 */
+    z-index: 1; /* Key: cover blockquote/code nodes that have backgrounds */
     cursor: text;
     pointer-events: none;
     transform: translate(-1px);
@@ -172,7 +172,7 @@ body {
     100% { opacity: 1; }
 }
 
-/* Crepe 按钮/输入框基础重置（原 reset.css 提供，去掉 reset.css 后补上）*/
+/* Basic reset for Crepe buttons/inputs (originally provided by reset.css, supplemented after removing reset.css) */
 .milkdown button,
 .milkdown input {
     border: none;
@@ -191,13 +191,13 @@ body {
     outline: none;
     background: transparent;
     color: inherit;
-    padding: 0 !important; /* #editor 已提供边距，去掉 Crepe 的 60px 120px */
+    padding: 0 !important; /* #editor already provides margin, remove Crepe's 60px 120px */
     caret-color: var(--vscode-editorCursor-foreground, #000);
-    white-space: pre-wrap; /* ProseMirror 要求 */
+    white-space: pre-wrap; /* ProseMirror requirement */
     word-wrap: break-word;
 }
 
-/* 内联 HTML 渲染容器（DOMPurify 净化后只读显示） */
+/* Inline HTML render container (read-only after DOMPurify sanitization) */
 .milkdown .ProseMirror .html-inline {
     display: contents;
 }
@@ -205,19 +205,19 @@ body {
     text-align: center;
 }
 
-/* 段落 */
+/* Paragraph */
 .milkdown .ProseMirror p {
     margin: 0;
     padding-bottom: 0.4em;
 }
 
-/* 表格单元格内段落不留底部间距 */
+/* Paragraphs in table cells have no bottom padding */
 .milkdown .ProseMirror td > p,
 .milkdown .ProseMirror th > p {
     padding-bottom: 0;
 }
 
-/* 标题：逐级明确尺寸，六级等差递减 */
+/* Headings: explicit sizes per level, six-level arithmetic decrease */
 .milkdown .ProseMirror h1,
 .milkdown .ProseMirror h2,
 .milkdown .ProseMirror h3,
@@ -249,7 +249,7 @@ body {
 .milkdown .ProseMirror h5 { font-size: 1em; }
 .milkdown .ProseMirror h6 { font-size: 0.9em; font-weight: 400; color: var(--vscode-descriptionForeground); }
 
-/* 粗体、斜体 */
+/* Bold, italic */
 .milkdown .ProseMirror strong {
     color: var(--vscode-editor-foreground);
     font-weight: 700;
@@ -259,7 +259,7 @@ body {
     color: var(--vscode-editor-foreground);
 }
 
-/* 行内代码 */
+/* Inline code */
 .milkdown .ProseMirror code {
     background: var(
         --vscode-textCodeBlock-background,
@@ -277,15 +277,15 @@ body {
     overflow-wrap: break-word;
 }
 
-/* 代码块 */
-/* ─── 代码块（基于 Crepe CodeMirror）─── */
+/* Code block */
+/* ─── Code block (based on Crepe CodeMirror)─── */
 
-/* 字体与 VSCode 编辑器一致 */
+/* Font matches the VSCode editor */
 .milkdown .milkdown-code-block .cm-editor .cm-content {
     font-family: var(--vscode-editor-font-family, monospace) !important;
 }
 
-/* active line / selection 用 VSCode 变量 */
+/* active line / selection use VSCode variables */
 .milkdown .milkdown-code-block .cm-editor .cm-activeLine {
     background: var(--vscode-editor-lineHighlightBackground, rgba(128,128,128,0.08)) !important;
 }
@@ -303,7 +303,7 @@ body {
     padding: 0 14px 14px !important;
 }
 
-/* 标题栏 */
+/* Header bar */
 .milkdown .milkdown-code-block .tools {
     display: flex;
     align-items: center;
@@ -311,7 +311,7 @@ body {
     padding: 6px 0;
 }
 
-/* 按钮常驻 + 风格对齐顶部工具条 */
+/* Always-shown buttons + style aligned with the top toolbar */
 .milkdown .milkdown-code-block .tools .language-button,
 .milkdown .milkdown-code-block .tools .tools-button-group > button,
 .milkdown .milkdown-code-block .epytor-fullscreen-btn {
@@ -339,7 +339,7 @@ body {
     border-color: var(--vscode-toolbar-hoverOutline, transparent);
 }
 
-/* 语言按钮增强可见性 */
+/* Boost the visibility of the language button */
 .milkdown .milkdown-code-block .tools .language-button {
     background: var(--vscode-input-background, rgba(128,128,128,0.1));
     border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.4));
@@ -352,13 +352,13 @@ body {
 .milkdown .milkdown-code-block .tools .language-button:hover {
     border-color: transparent;
 }
-/* 下拉箭头可见 */
+/* Make the dropdown arrow visible */
 .milkdown .milkdown-code-block .expand-icon svg {
     color: var(--vscode-editor-foreground) !important;
     opacity: 0.6 !important;
 }
 
-/* 语言下拉 — 极简紧凑 */
+/* Language dropdown — minimal and compact */
 .milkdown .milkdown-code-block .language-picker {
     z-index: 1000;
     padding-top: 4px;
@@ -372,7 +372,7 @@ body {
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     overflow: hidden;
 }
-/* 搜索区 — 满宽底色分隔 */
+/* Search area — full-width background separator */
 .milkdown .milkdown-code-block .search-box,
 .milkdown .milkdown-code-block .search-box:has(input:focus) {
     padding: 6px 8px;
@@ -381,7 +381,7 @@ body {
     background: var(--vscode-input-background, rgba(128,128,128,0.08));
     border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.15));
 }
-/* 打开下拉时语言按钮保持蓝边框 */
+/* Keep the blue border on the language button while the dropdown is open */
 .milkdown .milkdown-code-block .language-button[data-expanded="true"] {
     border-color: var(--vscode-toolbar-hoverOutline, transparent) !important;
 }
@@ -403,7 +403,7 @@ body {
 .milkdown .milkdown-code-block .language-list-item:last-child {
     margin-bottom: 0;
 }
-/* 强控列表项边距（覆盖 Vue scoped 样式）*/
+/* Strongly control list-item margin (overrides Vue scoped styles) */
 #editor .milkdown .milkdown-code-block .language-list-item {
     padding: 4px 10px !important;
     font-size: 12px;
@@ -420,11 +420,11 @@ body {
     background: var(--vscode-list-hoverBackground, rgba(128,128,128,0.15));
 }
 
-/* 取消 Crepe 的连体按钮风格，改为独立按钮 */
+/* Cancel Crepe's joined-button style, use independent buttons instead */
 .milkdown .milkdown-code-block .tools .tools-button-group {
     gap: 4px;
 }
-/* 按钮固定顺序：预览 → 复制 → 全屏（用 order 声明式控制，不依赖 DOM 顺序） */
+/* Fixed button order: preview → copy → fullscreen (use `order` to declare, no DOM-order dependency) */
 .milkdown .milkdown-code-block .tools .preview-toggle-button { order: 0; }
 .milkdown .milkdown-code-block .tools .copy-button { order: 1; }
 .milkdown .milkdown-code-block .tools .epytor-fullscreen-btn { order: 2; }
@@ -437,20 +437,20 @@ body {
     opacity: 0.7;
 }
 
-/* 展开箭头 */
+/* Expand arrow */
 .milkdown .milkdown-code-block .expand-icon svg {
     color: var(--vscode-editor-foreground);
     opacity: 0.7;
 }
 
-/* 下拉不裁剪 */
+/* Don't clip the dropdown */
 .milkdown .milkdown-code-block .language-picker {
     z-index: 1000;
 }
 
-/* 复制反馈 */
+/* Copy feedback */
 
-/* ── 纯 CSS 代码块全屏（不抽离 DOM，保证 ProseMirror / CodeMirror 状态完整） ── */
+/* ── Pure-CSS code block fullscreen (does not detach DOM, keeps ProseMirror / CodeMirror state intact) ── */
 .milkdown .milkdown-code-block.epytor-code-block-fullscreen {
     position: fixed !important;
     inset: 0 !important;
@@ -527,7 +527,7 @@ body.epytor-has-fullscreen-block {
     font-size: 0.9em;
 }
 
-/* ─── 引用块 ──────────────────────────────────────────── */
+/* ─── Blockquote ──────────────────────────────────────────── */
 .milkdown .ProseMirror blockquote {
     background: rgba(128, 128, 128, 0.06) !important;
     border-radius: 0 8px 8px 0 !important;
@@ -542,19 +542,19 @@ body.epytor-has-fullscreen-block {
     display: none !important;
 }
 
-/* ── 列表（Crepe list-item NodeView，div 结构非原生 ul/ol）── */
+/* ── List (Crepe list-item NodeView, div structure instead of native ul/ol)── */
 .milkdown .milkdown-list-item-block {
     padding-left: 0 !important;
     margin: 0.2em 0 !important;
     line-height: 1.6;
 }
 
-/* 嵌套缩进 */
+/* Nested indentation */
 .milkdown .milkdown-list-item-block .milkdown-list-item-block {
     padding-left: 1.5em !important;
 }
 
-/* 复选框与列表标号颜色 */
+/* Checkbox and list marker colors */
 .milkdown .milkdown-list-item-block .label-wrapper {
     color: var(--vscode-editor-foreground) !important;
     user-select: none;
@@ -802,7 +802,7 @@ body.epytor-has-fullscreen-block {
     margin: 4px 6px;
 }
 
-/* 链接 */
+/* Link */
 .milkdown .ProseMirror a {
     color: var(--vscode-textLink-foreground, #4ea6ea);
     text-decoration: none;
@@ -811,24 +811,24 @@ body.epytor-has-fullscreen-block {
     text-decoration: underline;
     color: var(--vscode-textLink-activeForeground, #4ea6ea);
 }
-/* 按住 Ctrl/Meta 时链接显示小手（提示可 ctrl+click 打开）*/
+/* When Ctrl/Meta is held, links show a pointer cursor (hint that Ctrl+Click will open) */
 body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     cursor: pointer;
 }
 
-/* 水平分割线 */
+/* Horizontal rule */
 .milkdown .ProseMirror hr {
     border: none;
     border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
     margin: 1.5em 0;
 }
 
-/* 删除线 */
+/* Strikethrough */
 .milkdown .ProseMirror del {
     opacity: 0.6;
 }
 
-/* 选中高亮 */
+/* Selection highlight */
 .milkdown .ProseMirror ::selection {
     background: var(
         --vscode-editor-selectionBackground,
@@ -837,10 +837,10 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 }
 
 
-/* 旧顶栏容器不再使用（Crepe top-bar 在 .milkdown 内） */
+/* Old top-bar container no longer used (Crepe top-bar is inside .milkdown) */
 .editor-topbar { display: none; }
 
-/* ─── 工具栏左侧品牌标识（绝对定位，不参与 flex 流） ─── */
+/* ─── Brand badge on the left of the toolbar (absolute, not part of flex flow) ─── */
 .epytor-brand {
     position: absolute;
     left: 12px;
@@ -855,7 +855,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     transition: opacity 0.15s ease;
 }
 
-/* ─── Crepe top-bar：position:fixed 吸顶 ─── */
+/* ─── Crepe top-bar: position:fixed, sticky to top ─── */
 .milkdown .milkdown-top-bar {
     position: fixed !important;
     top: 0;
@@ -875,7 +875,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     container-type: inline-size;
 }
 
-/* 容器宽度 < 640px 时隐藏品牌并消除左内边距，释放横向操作空间 */
+/* Hide the brand and remove the left padding when the container is < 640px wide, to free up horizontal space */
 @container (max-width: 640px) {
     .epytor-brand {
         opacity: 0;
@@ -893,7 +893,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     flex-wrap: nowrap;
     overflow: visible;
 }
-/* 宽度 < 720px 时工具栏按钮允许换行（~19 个按钮 + 分隔线的最小宽度） */
+/* Allow toolbar buttons to wrap when width < 720px (~19 buttons + separators, minimum width) */
 @container (max-width: 720px) {
     .milkdown .milkdown-top-bar .top-bar-inner {
         flex-wrap: wrap;
@@ -1007,7 +1007,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     color: var(--vscode-focusBorder, #007acc);
 }
 
-/* ─── 选中浮动工具栏：匹配顶部工具栏样式 ─── */
+/* ─── Floating selection toolbar: matches the top toolbar style ─── */
 .milkdown .milkdown-toolbar {
     z-index: 103 !important;
     background: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-background) 93%, #808080) 88%, transparent) !important;
@@ -1062,7 +1062,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     background: var(--vscode-panel-border, rgba(128,128,128,0.3)) !important;
 }
 
-/* ─── Crepe link-tooltip：对齐工具栏风格 ──────────────── */
+/* ─── Crepe link-tooltip: aligns with the toolbar style ──────────────── */
 .milkdown .milkdown-link-preview > .link-preview,
 .milkdown .milkdown-link-edit > .link-edit {
     height: auto !important;
@@ -1130,7 +1130,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     border-color: var(--vscode-focusBorder, #007acc) !important;
 }
 
-/* ─── 表格：按钮形状 + 背景 ───────────────────────────────── */
+/* ─── Table: button shape + background ───────────────────────────────── */
 .milkdown .milkdown-table-block .cell-handle {
     background-color: var(--vscode-editor-background);
     border-radius: 6px;
@@ -1142,12 +1142,12 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     border-radius: 4px;
 }
 
-/* 光标 */
+/* Cursor */
 .milkdown .ProseMirror-focused {
     outline: none;
 }
 
-/* ─── 自定义 Tooltip ─── */
+/* ─── Custom Tooltip ─── */
 .custom-tooltip {
     position: fixed;
     z-index: 10000;
@@ -1607,6 +1607,37 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 .mermaid-rendered-svg svg {
     max-width: 100%;
     height: auto;
+}
+
+/* Mermaid Interactive Nodes & Edges */
+.mermaid-rendered-svg .node,
+.mermaid-zoom-content .node {
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease, opacity 0.2s ease;
+}
+
+.mermaid-rendered-svg .node:hover,
+.mermaid-zoom-content .node:hover {
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+    transform: scale(1.02);
+}
+
+.mermaid-rendered-svg .edgePath,
+.mermaid-zoom-content .edgePath {
+    transition: stroke-width 0.2s ease, stroke 0.2s ease, opacity 0.2s ease;
+}
+
+.mermaid-rendered-svg.has-focus .node:not(.is-focused),
+.mermaid-rendered-svg.has-focus .edgePath:not(.is-focused),
+.mermaid-zoom-content.has-focus .node:not(.is-focused),
+.mermaid-zoom-content.has-focus .edgePath:not(.is-focused) {
+    opacity: 0.25;
+}
+
+.mermaid-rendered-svg .edgePath.is-focused path,
+.mermaid-zoom-content .edgePath.is-focused path {
+    stroke: #3b82f6 !important;
+    stroke-width: 3px !important;
 }
 
 /* Mermaid Zoom Modal */

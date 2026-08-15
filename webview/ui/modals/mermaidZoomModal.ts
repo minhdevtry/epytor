@@ -1,4 +1,5 @@
-import { IconZoomIn, IconZoomOut, IconResetZoom, IconCopy, IconX } from "../icons";
+import { IconZoomIn, IconZoomOut, IconResetZoom, IconCopy, IconX, IconCamera, IconDownload } from "../icons";
+import { copyPngToClipboard, exportSvgToPng, downloadBlob } from "../../utils/mermaidExport";
 
 export function showMermaidZoomModal(svgContent: string, rawCode: string): void {
     const modal = document.createElement("div");
@@ -21,7 +22,9 @@ export function showMermaidZoomModal(svgContent: string, rawCode: string): void 
                 <div class="mermaid-zoom-actions">
                     <button class="mzm-btn mzm-zoom-in" title="Zoom In (+)">${IconZoomIn}</button>
                     <button class="mzm-btn mzm-zoom-out" title="Zoom Out (-)">${IconZoomOut}</button>
-                    <button class="mzm-btn mzm-zoom-reset" title="Reset (100%)">${IconResetZoom}</button>
+                    <button class="mzm-btn mzm-zoom-reset" title="Reset (100% / 0)">${IconResetZoom}</button>
+                    <button class="mzm-btn mzm-copy-png" title="Copy HD PNG">${IconCamera} <span class="mzm-btn-label">PNG</span></button>
+                    <button class="mzm-btn mzm-download-svg" title="Download SVG">${IconDownload} <span class="mzm-btn-label">SVG</span></button>
                     <button class="mzm-btn mzm-copy" title="Copy Mermaid Code">${IconCopy} <span class="mzm-btn-label">Copy</span></button>
                     <button class="mzm-btn mzm-close" title="Close (Esc)">${IconX}</button>
                 </div>
@@ -89,6 +92,31 @@ export function showMermaidZoomModal(svgContent: string, rawCode: string): void 
         updateTransform();
     });
 
+    const copyPngBtn = modal.querySelector<HTMLButtonElement>(".mzm-copy-png");
+    copyPngBtn?.addEventListener("click", async () => {
+        const svgEl = contentEl.querySelector<SVGSVGElement>("svg");
+        if (!svgEl) return;
+        try {
+            await copyPngToClipboard(svgEl);
+            const label = copyPngBtn.querySelector(".mzm-btn-label");
+            if (label) label.textContent = "Copied!";
+            setTimeout(() => {
+                if (label) label.textContent = "PNG";
+            }, 1500);
+        } catch (err) {
+            console.error("Failed to copy PNG in modal:", err);
+        }
+    });
+
+    const downloadSvgBtn = modal.querySelector<HTMLButtonElement>(".mzm-download-svg");
+    downloadSvgBtn?.addEventListener("click", () => {
+        const svgEl = contentEl.querySelector<SVGSVGElement>("svg");
+        if (!svgEl) return;
+        const svgData = new XMLSerializer().serializeToString(svgEl);
+        const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        downloadBlob(blob, `mermaid-diagram-${Date.now()}.svg`);
+    });
+
     const copyBtn = modal.querySelector<HTMLButtonElement>(".mzm-copy");
     copyBtn?.addEventListener("click", () => {
         navigator.clipboard.writeText(rawCode).then(() => {
@@ -111,6 +139,20 @@ export function showMermaidZoomModal(svgContent: string, rawCode: string): void 
         if (e.key === "Escape") {
             e.preventDefault();
             close();
+        } else if (e.key === "+" || e.key === "=") {
+            e.preventDefault();
+            scale = Math.min(scale * 1.25, 10);
+            updateTransform();
+        } else if (e.key === "-") {
+            e.preventDefault();
+            scale = Math.max(scale * 0.8, 0.2);
+            updateTransform();
+        } else if (e.key === "0") {
+            e.preventDefault();
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
         }
     };
     document.addEventListener("keydown", onKeyDown);

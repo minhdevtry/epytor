@@ -35,6 +35,8 @@ import { tags } from "@lezer/highlight";
 import { languages as allCodeLanguages } from "@codemirror/language-data";
 import mermaid from "mermaid";
 import { onThemeChange } from "./utils/themeBus";
+import { getMermaidConfig } from "./utils/mermaidThemes";
+import { copyPngToClipboard } from "./utils/mermaidExport";
 import { t } from "./i18n";
 import {
     TbUndo,
@@ -53,6 +55,9 @@ import {
     IconBrandYoutube,
     IconVideo,
     IconHighlighter,
+    IconZoomIn,
+    IconCopy,
+    IconCamera,
 } from "./ui/icons";
 
 // ─── Plugins ────────────────────────────────────────────────────────────────
@@ -73,13 +78,13 @@ import { createImageView } from "./components/imageView";
 
 export { registerSelectionChangeHandler };
 
-// 调试日志开关
+// Debug log switch
 let logTableSel = false;
 export function setLogTableSel(enabled: boolean): void {
     logTableSel = enabled;
 }
 
-// 完整语言库，支持所有主流编程语言的高亮
+// Complete language list supporting syntax highlighting for all major programming languages
 const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Text",
@@ -96,7 +101,7 @@ const codeLanguages: LanguageDescription[] = [
     }),
 ];
 
-// ─── 比较规范化辅助函数 ─────────────────────────────────────────────────────
+// ─── Comparison normalization helpers ─────────────────────────────────────────────────────
 const SEP_ROW_RE = /^\|[\s\-:|]+\|$/;
 const TABLE_ROW_RE = /^\|.*\|$/;
 
@@ -141,7 +146,7 @@ function normLineForCompare(line: string): string {
     return normalizeSplitStrong(line);
 }
 
-// ─── 最小化差异合并 ──────────────────────────────────────────────────────────
+// ─── Minimal-diff merge ──────────────────────────────────────────────────────────
 function applyMinimalChanges(saved: string, serialized: string): string {
     interface SigLine { text: string; lineIdx: number }
 
@@ -198,7 +203,7 @@ function applyMinimalChanges(saved: string, serialized: string): string {
     return result.join('\n');
 }
 
-// ─── 编辑器实例管理 ──────────────────────────────────────────────────────────
+// ─── Editor instance management ──────────────────────────────────────────────────────────
 let _editor: Editor | null = null;
 let _savedMarkdown = '';
 let _hasUserInteracted = false;
@@ -325,20 +330,48 @@ export async function createEditor(
     const mermaidCodeMap = new Map<string, string>();
     let mermaidSeq = 0;
 
+    mermaid.initialize(getMermaidConfig(isDark));
+
     const renderMermaid = (code: string): Promise<string> => {
         const id = "mermaid-" + Math.random().toString(36).slice(2, 8);
         return mermaid.render(id, code).then(({ svg }) => svg);
     };
 
+    const attachMermaidInteractions = (svgTarget: HTMLElement) => {
+        const svgEl = svgTarget.querySelector<SVGSVGElement>("svg");
+        if (!svgEl) return;
+
+        const nodes = svgEl.querySelectorAll<SVGGraphicsElement>(".node");
+        nodes.forEach((node) => {
+            node.addEventListener("mouseenter", () => {
+                const nodeId = node.id;
+                if (!nodeId) return;
+                svgEl.classList.add("has-focus");
+                node.classList.add("is-focused");
+                svgEl.querySelectorAll(".edgePath").forEach((edge) => {
+                    const cls = edge.getAttribute("class") || "";
+                    if (cls.includes(`LS-${nodeId}`) || cls.includes(`LE-${nodeId}`) || cls.includes(nodeId)) {
+                        edge.classList.add("is-focused");
+                    }
+                });
+            });
+            node.addEventListener("mouseleave", () => {
+                svgEl.classList.remove("has-focus");
+                svgEl.querySelectorAll(".is-focused").forEach((el) => el.classList.remove("is-focused"));
+            });
+        });
+    };
+
     onThemeChange((dark) => {
         isDark = dark;
-        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default" });
+        mermaid.initialize(getMermaidConfig(dark));
         mermaidCodeMap.forEach((code, key) => {
             const el = document.querySelector<HTMLElement>(`[data-mermaid-key="${key}"]`);
             if (el) {
                 renderMermaid(code).then((svg) => {
                     const svgTarget = el.querySelector<HTMLElement>(".mermaid-rendered-svg") || el;
                     svgTarget.innerHTML = svg;
+                    attachMermaidInteractions(svgTarget);
                 }).catch(() => {});
             }
         });
@@ -357,8 +390,9 @@ export async function createEditor(
         apply(`
             <div class="mermaid-block-wrapper" data-mermaid-key="${key}">
                 <div class="mermaid-actions-bar">
-                    <button class="mermaid-action-btn mermaid-action-zoom" title="Zoom Diagram">🔍 Zoom</button>
-                    <button class="mermaid-action-btn mermaid-action-copy" title="Copy Mermaid Code">📋 Copy</button>
+                    <button class="mermaid-action-btn mermaid-action-zoom" title="Zoom & Pan Diagram">${IconZoomIn} <span>Zoom</span></button>
+                    <button class="mermaid-action-btn mermaid-action-copy-png" title="Copy PNG to Clipboard">${IconCamera} <span>PNG</span></button>
+                    <button class="mermaid-action-btn mermaid-action-copy" title="Copy Mermaid Code">${IconCopy} <span>Copy</span></button>
                 </div>
                 <div class="mermaid-rendered-svg"></div>
             </div>
@@ -375,6 +409,7 @@ export async function createEditor(
                     svgTarget.addEventListener("dblclick", () => {
                         showMermaidZoomModal(svg, code);
                     });
+                    attachMermaidInteractions(svgTarget);
                 }
                 const zoomBtn = containerEl.querySelector<HTMLButtonElement>(".mermaid-action-zoom");
                 zoomBtn?.addEventListener("click", (e) => {
@@ -382,13 +417,29 @@ export async function createEditor(
                     e.stopPropagation();
                     showMermaidZoomModal(svg, code);
                 });
+                const copyPngBtn = containerEl.querySelector<HTMLButtonElement>(".mermaid-action-copy-png");
+                copyPngBtn?.addEventListener("click", async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const svgEl = containerEl.querySelector<SVGSVGElement>(".mermaid-rendered-svg svg");
+                    if (!svgEl) return;
+                    try {
+                        await copyPngToClipboard(svgEl);
+                        const label = copyPngBtn.querySelector("span");
+                        if (label) label.textContent = "Copied!";
+                        setTimeout(() => { if (label) label.textContent = "PNG"; }, 1500);
+                    } catch (err) {
+                        console.error("Failed to copy PNG:", err);
+                    }
+                });
                 const copyBtn = containerEl.querySelector<HTMLButtonElement>(".mermaid-action-copy");
                 copyBtn?.addEventListener("click", (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(code).then(() => {
-                        copyBtn.textContent = "✓ Copied";
-                        setTimeout(() => { copyBtn.textContent = "📋 Copy"; }, 1500);
+                        const label = copyBtn.querySelector("span");
+                        if (label) label.textContent = "Copied!";
+                        setTimeout(() => { if (label) label.textContent = "Copy"; }, 1500);
                     });
                 });
             }
