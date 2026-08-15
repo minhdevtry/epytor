@@ -775,17 +775,28 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
-// Globally intercept Cmd/Ctrl+Z (Undo) and Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (Redo) to guarantee reliable response
+// Globally intercept Cmd/Ctrl+Z (Undo) and Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (Redo) to guarantee reliable response across keyboard layouts
 window.addEventListener(
     "keydown",
     (e) => {
         const target = e.target as HTMLElement;
-        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.closest(".cm-editor"))) {
+        if (
+            target &&
+            (target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.closest(".cm-editor") ||
+                target.closest(".epytor-modal") ||
+                target.closest(".global-lightbox") ||
+                target.closest(".mermaid-modal-overlay"))
+        ) {
             return;
         }
 
         if ((e.metaKey || e.ctrlKey) && !e.altKey) {
-            if (e.code === "KeyZ" && !e.shiftKey) {
+            const isZ = e.code === "KeyZ" || e.key === "z" || e.key === "Z";
+            const isY = e.code === "KeyY" || e.key === "y" || e.key === "Y";
+
+            if (isZ && !e.shiftKey) {
                 const view = getEditorView();
                 if (view) {
                     e.preventDefault();
@@ -795,7 +806,7 @@ window.addEventListener(
                 return;
             }
 
-            if ((e.code === "KeyZ" && e.shiftKey) || (e.code === "KeyY" && !e.shiftKey)) {
+            if ((isZ && e.shiftKey) || (isY && !e.shiftKey)) {
                 const view = getEditorView();
                 if (view) {
                     e.preventDefault();
