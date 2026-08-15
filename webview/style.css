@@ -527,16 +527,17 @@ body {
 
 /* ─── 引用块 ──────────────────────────────────────────── */
 .milkdown .ProseMirror blockquote {
-    background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
-    border-radius: 6px;
-    padding: 8px 12px 8px 36px !important;
-    color: var(--vscode-editor-foreground);
+    background: rgba(128, 128, 128, 0.06) !important;
+    border-radius: 0 8px 8px 0 !important;
     border: none !important;
+    border-left: 3.5px solid var(--vscode-textLink-foreground, #3b82f6) !important;
+    padding: 10px 16px !important;
+    margin: 1.2em 0 !important;
+    color: var(--vscode-editor-foreground) !important;
+    font-style: italic !important;
 }
 .milkdown .ProseMirror blockquote::before {
-    background: var(--vscode-editor-foreground) !important;
-    opacity: 0.15;
-    left: 8px !important;
+    display: none !important;
 }
 
 /* ── 列表（Crepe list-item NodeView，div 结构非原生 ul/ol）── */
@@ -1146,20 +1147,22 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 .milkdown .ProseMirror blockquote.callout {
     position: relative;
     border-radius: 8px !important;
-    padding: 10px 16px 10px 42px !important;
-    margin: 1.2em 0 !important;
+    padding: 12px 18px 12px 46px !important;
+    margin: 1.4em 0 !important;
     border: 1px solid transparent !important;
-    border-left-width: 4px !important;
+    border-left-width: 4.5px !important;
     font-size: 14px;
     line-height: 1.6;
+    font-style: normal !important;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .milkdown .ProseMirror blockquote.callout::before {
+    display: block !important;
     position: absolute;
-    top: 10px;
-    left: 12px;
-    font-size: 18px;
+    top: 12px;
+    left: 14px;
+    font-size: 20px;
     line-height: 1;
     width: auto !important;
     height: auto !important;
@@ -1167,64 +1170,108 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     opacity: 1 !important;
 }
 
+/* Callout Tag Pill */
+.milkdown .ProseMirror .callout-tag-pill {
+    display: inline-block !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    margin-right: 8px !important;
+    padding: 2px 7px !important;
+    border-radius: 4px !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+}
+
 /* 1. Note / Info (Blue) */
 .milkdown .ProseMirror blockquote.callout-note {
     background: rgba(59, 130, 246, 0.08) !important;
-    border-color: rgba(59, 130, 246, 0.3) !important;
+    border-color: rgba(59, 130, 246, 0.25) !important;
     border-left-color: #3b82f6 !important;
 }
 .milkdown .ProseMirror blockquote.callout-note::before {
     content: "ℹ️";
 }
+.milkdown .ProseMirror .callout-tag-note {
+    color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
 
 /* 2. Tip (Green) */
 .milkdown .ProseMirror blockquote.callout-tip {
     background: rgba(16, 185, 129, 0.08) !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
     border-left-color: #10b981 !important;
 }
 .milkdown .ProseMirror blockquote.callout-tip::before {
     content: "💡";
 }
+.milkdown .ProseMirror .callout-tag-tip {
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
 
 /* 3. Warning (Amber/Yellow) */
 .milkdown .ProseMirror blockquote.callout-warning {
     background: rgba(245, 158, 11, 0.08) !important;
-    border-color: rgba(245, 158, 11, 0.3) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
     border-left-color: #f59e0b !important;
 }
 .milkdown .ProseMirror blockquote.callout-warning::before {
     content: "⚠️";
 }
+.milkdown .ProseMirror .callout-tag-warning {
+    color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
 
 /* 4. Caution / Danger (Red) */
 .milkdown .ProseMirror blockquote.callout-caution {
     background: rgba(239, 68, 68, 0.08) !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
     border-left-color: #ef4444 !important;
 }
 .milkdown .ProseMirror blockquote.callout-caution::before {
     content: "🛑";
 }
+.milkdown .ProseMirror .callout-tag-caution {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
 
 /* 5. Success (Emerald) */
 .milkdown .ProseMirror blockquote.callout-success {
     background: rgba(34, 197, 94, 0.08) !important;
-    border-color: rgba(34, 197, 94, 0.3) !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
     border-left-color: #22c55e !important;
 }
 .milkdown .ProseMirror blockquote.callout-success::before {
     content: "✅";
 }
+.milkdown .ProseMirror .callout-tag-success {
+    color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.15) !important;
+    border: 1px solid rgba(34, 197, 94, 0.35) !important;
+}
 
 /* 6. Important (Purple) */
 .milkdown .ProseMirror blockquote.callout-important {
     background: rgba(168, 85, 247, 0.08) !important;
-    border-color: rgba(168, 85, 247, 0.3) !important;
+    border-color: rgba(168, 85, 247, 0.25) !important;
     border-left-color: #a855f7 !important;
 }
 .milkdown .ProseMirror blockquote.callout-important::before {
     content: "💜";
+}
+.milkdown .ProseMirror .callout-tag-important {
+    color: #a855f7 !important;
+    background: rgba(168, 85, 247, 0.15) !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
 }
 
 /* ─── Video & YouTube Embeds ─── */

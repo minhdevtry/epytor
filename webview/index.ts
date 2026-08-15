@@ -18,6 +18,7 @@ import {
     setLogTableSel,
 } from "./editor";
 import type { EditorView } from "@milkdown/kit/prose/view";
+import { undo, redo } from "@milkdown/kit/prose/history";
 import { TextSelection } from "@milkdown/kit/prose/state";
 import {
     notifyReady,
@@ -741,6 +742,40 @@ window.addEventListener("keydown", (e) => {
         notifySwitchToTextEditor(line);
     }
 });
+
+// Cmd/Ctrl+Z (Undo) 和 Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (Redo) 全局拦截，确保绝对可靠响应
+window.addEventListener(
+    "keydown",
+    (e) => {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+            return;
+        }
+
+        if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+            if (e.code === "KeyZ" && !e.shiftKey) {
+                const view = getEditorView();
+                if (view) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    undo(view.state, view.dispatch, view);
+                }
+                return;
+            }
+
+            if ((e.code === "KeyZ" && e.shiftKey) || (e.code === "KeyY" && !e.shiftKey)) {
+                const view = getEditorView();
+                if (view) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    redo(view.state, view.dispatch, view);
+                }
+                return;
+            }
+        }
+    },
+    true
+);
 
 // WebView 加载完成，通知 Extension 侧发送初始内容
 notifyReady();

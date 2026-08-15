@@ -140,9 +140,13 @@ const listLiftPlugin = $prose((ctx) => {
     });
 });
 
-// 格式化快捷键：Mod-b 粗体、Mod-i 斜体、Mod-Shift-x 删除线、Mod-e 行内代码
+// 格式化快捷键：Mod-b 粗体、Mod-i 斜体、Mod-Shift-x 删除线、Mod-e 行内代码、Mod-z 撤销、Mod-Shift-z 重做
 const formatKeymapPlugin = $prose((ctx) =>
     keymap({
+        "Mod-z": (state, dispatch, view) => undo(state, dispatch, view),
+        "Mod-y": (state, dispatch, view) => redo(state, dispatch, view),
+        "Mod-Shift-z": (state, dispatch, view) => redo(state, dispatch, view),
+        "Shift-Mod-z": (state, dispatch, view) => redo(state, dispatch, view),
         "Mod-b": () => {
             ctx.get(commandsCtx).call(toggleStrongCommand.key);
             return true;
@@ -597,6 +601,12 @@ export async function createEditor(
                                     decos.push(
                                         Decoration.node(pos, pos + node.nodeSize, {
                                             class: `callout callout-${type}`,
+                                        })
+                                    );
+                                    const tagLen = match[0].length;
+                                    decos.push(
+                                        Decoration.inline(pos + 2, pos + 2 + tagLen, {
+                                            class: `callout-tag-pill callout-tag-${type}`,
                                         })
                                     );
                                 }
