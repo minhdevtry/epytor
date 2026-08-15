@@ -11,7 +11,7 @@ describe("themeBus", () => {
         document.body.className = "";
     });
 
-    it("浅色主题订阅时 应该 立即回调 false", async () => {
+    it("should call back with false immediately when subscribed under a light theme", async () => {
         const { onThemeChange } = await loadThemeBus();
         const listener = vi.fn();
 
@@ -23,7 +23,7 @@ describe("themeBus", () => {
     });
 
     it.each(["vscode-dark", "vscode-high-contrast"])(
-        "%s 主题订阅时 应该 立即回调 true",
+        "should call back with true immediately when subscribed under the %s theme",
         async (themeClass) => {
             document.body.className = themeClass;
             const { onThemeChange } = await loadThemeBus();
@@ -36,7 +36,7 @@ describe("themeBus", () => {
         },
     );
 
-    it("主题明暗发生变化时 应该 通知订阅者一次", async () => {
+    it("should notify subscribers once when the theme's light/dark state changes", async () => {
         const { onThemeChange } = await loadThemeBus();
         const listener = vi.fn();
         const unsubscribe = onThemeChange(listener);
@@ -50,7 +50,7 @@ describe("themeBus", () => {
         unsubscribe();
     });
 
-    it("主题类别变化但明暗不变时 应该 不重复通知", async () => {
+    it("should not notify again when only the theme variant changes but the light/dark state stays the same", async () => {
         document.body.className = "vscode-dark";
         const { onThemeChange } = await loadThemeBus();
         const listener = vi.fn();
@@ -65,7 +65,7 @@ describe("themeBus", () => {
         unsubscribe();
     });
 
-    it("取消订阅后主题变化时 应该 不再通知订阅者", async () => {
+    it("should stop notifying the subscriber after unsubscribe", async () => {
         const { onThemeChange } = await loadThemeBus();
         const listener = vi.fn();
         const unsubscribe = onThemeChange(listener);

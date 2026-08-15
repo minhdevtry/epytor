@@ -7,14 +7,14 @@ const styleCss = readFileSync(
     "utf-8",
 );
 
-describe("WebView 样式", () => {
+describe("WebView styles", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         document.head.innerHTML = `<style>${styleCss}</style>`;
         document.body.innerHTML = "";
     });
 
-    it("顶栏包含弹出菜单时 应该 允许菜单溢出容器", () => {
+    it("should allow menus to overflow the top bar container when a pop-up menu is present", () => {
         document.body.innerHTML = `
             <div class="milkdown">
                 <div class="milkdown-top-bar">

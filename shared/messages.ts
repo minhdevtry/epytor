@@ -1,26 +1,26 @@
 /**
  * shared/messages.ts
- * WebView ↔ Extension 双向消息类型的唯一权威来源。
- * 两侧均从此处导入，禁止各自内联重复定义。
+ * The single authoritative source for the two-way message types between the WebView and the extension.
+ * Both sides import from here; do not duplicate these definitions inline.
  */
 
-/** 图片元数据：磁盘相对路径 + WebView 可访问 URI + 文件名 */
+/** Image metadata: disk-relative path + WebView-accessible URI + file name */
 export type ProjectImage = {
     relPath: string;
     webviewUri: string;
     name: string;
 };
 
-/** 路径补全建议条目 */
+/** Path auto-completion suggestion entry */
 export type PathSuggestionItem = {
     path: string;
     isDir: boolean;
-    webviewUri?: string;  // 仅图片文件时返回，供缩略图预览
+    webviewUri?: string;  // Returned only for image files, for thumbnail preview
 };
 
 /**
- * WebView → Extension 方向的消息。
- * 所有字段反映发送方的实际约束：发送方必须提供的字段不得写成可选。
+ * WebView → Extension direction.
+ * All fields reflect the actual constraints of the sender: any field that the sender is required to provide must not be optional.
  */
 export type ToExtensionMessage =
     | { type: "ready" }
@@ -38,8 +38,8 @@ export type ToExtensionMessage =
     | { type: "wordCount"; lines: number; words: number; charsNoSpace: number; charsWithSpace: number };
 
 /**
- * Extension → WebView 方向的消息。
- * lineMap 在 init/revert 中为可选：Extension 始终发送，但 WebView 侧用 `?? []` 兜底以防万一。
+ * Extension → WebView direction.
+ * lineMap is optional in init/revert: the extension always sends it, but the WebView side uses `?? []` as a safety net.
  */
 export type ToWebviewMessage =
     | { type: "init"; content: string; lineMap?: number[]; scrollToLine?: number; frontmatter?: string; imageUriMap?: Record<string, string> }

@@ -6,7 +6,7 @@ describe("DocumentSyncService", () => {
         DocumentSyncService.clear("test-uri");
     });
 
-    it("lưu và xóa hash chính xác", () => {
+    it("saves and clears the hash correctly", () => {
         DocumentSyncService.recordSavedContent("test-uri", "# Hello World");
         // Hash has been stored internally
         DocumentSyncService.clear("test-uri");
@@ -14,7 +14,7 @@ describe("DocumentSyncService", () => {
         expect(true).toBe(true);
     });
 
-    it("phân biệt nội dung khác nhau", () => {
+    it("distinguishes between different contents", () => {
         DocumentSyncService.recordSavedContent("test-uri-1", "Content A");
         DocumentSyncService.recordSavedContent("test-uri-2", "Content B");
         expect(true).toBe(true);

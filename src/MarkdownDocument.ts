@@ -67,13 +67,13 @@ export class MarkdownDocument implements vscode.CustomDocument {
                 try {
                     await vscode.workspace.fs.delete(destination);
                 } catch {
-                    // 备份文件不存在时忽略
+                    // Backup file does not exist; ignore
                 }
             },
         };
     }
 
     dispose(): void {
-        // 清理资源（当前无需额外操作）
+        // Cleanup resources (no extra work needed at the moment)
     }
 }

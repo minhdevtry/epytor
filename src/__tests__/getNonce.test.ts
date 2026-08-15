@@ -2,28 +2,28 @@ import { describe, it, expect } from "vitest";
 import { getNonce } from "../../src/utils/getNonce";
 
 describe("getNonce", () => {
-    it("返回字符串类型", () => {
+    it("returns a string", () => {
         expect(typeof getNonce()).toBe("string");
     });
 
-    it("返回 16 字节的 base64 编码（长度 24）", () => {
-        // 16 字节的 base64 编码固定为 24 个字符（含填充 =）
+    it("returns a 16-byte base64-encoded value (length 24)", () => {
+        // A 16-byte base64-encoded value is fixed at 24 characters (including the = padding)
         expect(getNonce()).toHaveLength(24);
     });
 
-    it("只包含合法 base64 字符", () => {
+    it("contains only legal base64 characters", () => {
         const nonce = getNonce();
         expect(nonce).toMatch(/^[A-Za-z0-9+/=]+$/);
     });
 
-    it("连续两次调用生成不同的 nonce（唯一性）", () => {
+    it("generates a different nonce on consecutive calls (uniqueness)", () => {
         const n1 = getNonce();
         const n2 = getNonce();
-        // 随机性保证极低概率相同；若碰撞则说明随机性失效
+        // Randomness guarantees an extremely low collision rate; a collision means the randomness is broken
         expect(n1).not.toBe(n2);
     });
 
-    it("批量生成 100 个 nonce，全部唯一", () => {
+    it("generates 100 nonces in a batch, all unique", () => {
         const nonces = new Set(Array.from({ length: 100 }, () => getNonce()));
         expect(nonces.size).toBe(100);
     });

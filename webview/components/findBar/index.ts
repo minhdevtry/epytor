@@ -4,7 +4,7 @@ import { createButton } from "@/ui/dom";
 import { IconChevronUp, IconChevronDown, IconX } from "@/ui/icons";
 import { t, kbd } from "@/i18n";
 
-// TypeScript 类型声明：CSS Custom Highlight API（Chromium 105+ / Electron 22+）
+// TypeScript type declarations: CSS Custom Highlight API (Chromium 105+ / Electron 22+)
 declare class Highlight {
     constructor(...ranges: Range[]);
 }
@@ -19,7 +19,7 @@ export interface FindBarController {
 }
 
 export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarController {
-    // ── DOM 结构 ─────────────────────────────────────────
+    // ── DOM structure ─────────────────────────────────────────
     const bar = document.createElement("div");
     bar.className = "find-bar";
     bar.setAttribute("role", "search");
@@ -67,18 +67,18 @@ export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarContr
     });
     btnClose.setAttribute("aria-label", t("Close"));
 
-    // 布局：input → count → prev↑ → next↓ → sep → Aa → close
+    // Layout: input → count → prev↑ → next↓ → sep → Aa → close
     bar.append(input, count, btnPrev, btnNext, sep, btnCase, btnClose);
     document.body.appendChild(bar);
 
-    // ── 状态 ─────────────────────────────────────────────
+    // ── State ─────────────────────────────────────────────
     let visible = false;
     let caseSensitive = false;
     let matchRanges: Range[] = [];
     let currentIdx = 0;
     let debounceTimer = 0;
 
-    // ── 高亮更新 ─────────────────────────────────────────
+    // ── Highlight update ─────────────────────────────────────────
     function updateHighlights() {
         if (!("highlights" in CSS)) { return; }
         if (!matchRanges.length) {
@@ -98,7 +98,7 @@ export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarContr
         CSS.highlights.delete("find-highlight-current");
     }
 
-    // ── 搜索 ──────────────────────────────────────────────
+    // ── Search ──────────────────────────────────────────────
     function search(query: string) {
         matchRanges = [];
         currentIdx = 0;
@@ -169,7 +169,7 @@ export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarContr
         scrollToMatch((currentIdx - 1 + matchRanges.length) % matchRanges.length);
     }
 
-    // ── 事件绑定 ─────────────────────────────────────────
+    // ── Event bindings ─────────────────────────────────────────
     input.addEventListener("input", () => {
         clearTimeout(debounceTimer);
         debounceTimer = window.setTimeout(() => search(input.value), 150);
@@ -199,10 +199,10 @@ export function initFindBar(getEditorEl: () => HTMLElement | null): FindBarContr
         search(input.value);
     });
 
-    // 阻止搜索栏内的 mousedown 冒泡，防止编辑器捕获
+    // Prevent mousedown from bubbling inside the search bar so the editor doesn't capture it
     bar.addEventListener("mousedown", (e) => e.stopPropagation());
 
-    // ── 公开 API ─────────────────────────────────────────
+    // ── Public API ─────────────────────────────────────────
     function open(initialQuery?: string) {
         visible = true;
         bar.classList.add("find-bar--visible");

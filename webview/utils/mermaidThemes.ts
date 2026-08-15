@@ -8,7 +8,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
         theme: "base",
         themeVariables: isDark
             ? {
-                  // Dark Mode Theme Variables (Hiện đại, tương phản sắc nét, màu sắc HSL cao cấp)
+                  // Dark mode theme variables (modern, high-contrast, premium HSL palette)
                   darkMode: true,
                   background: "transparent",
                   primaryColor: "#1e293b",
@@ -32,7 +32,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
                   mainBkg: "#1e293b",
               }
             : {
-                  // Light Mode Theme Variables (Sạch sẽ, thanh thoát, màu pastel dịu mắt)
+                  // Light mode theme variables (clean, neat, easy-on-the-eye pastel colors)
                   darkMode: false,
                   background: "transparent",
                   primaryColor: "#f8fafc",
@@ -56,7 +56,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
                   mainBkg: "#ffffff",
               },
         flowchart: {
-            curve: "basis", // Đường cong mượt Monotone / Basis
+            curve: "basis", // Smooth Monotone / Basis curve
             htmlLabels: true,
             padding: 16,
             nodeSpacing: 50,

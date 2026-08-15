@@ -1,4 +1,4 @@
-/** WebView 侧中文翻译表（key 为英文原文） */
+/** WebView-side Chinese translation table (key is the original English string) */
 export const ZH_CN_WEBVIEW: Record<string, string> = {
     'Table of Contents': '目录',
     'Undo': '撤销',

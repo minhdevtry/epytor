@@ -23,7 +23,8 @@ describe("mermaidThemes", () => {
 });
 
 describe("mermaidExport", () => {
-    it("downloadBlob 应创建 a 标签触发下载并清理", () => {
+    it("downloadBlob creates an <a> tag, triggers the download, and cleans up", () => {
+        // jsdom does not implement navigation, so stub a.click() to prevent the navigation error
         const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
         const blob = new Blob(["test"], { type: "text/plain" });
         expect(() => downloadBlob(blob, "test.txt")).not.toThrow();

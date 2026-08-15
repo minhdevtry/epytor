@@ -11,16 +11,16 @@ declare global {
 const _t: Record<string, string> = window.__i18n?.translations ?? {};
 const _isMac: boolean = window.__i18n?.isMac ?? false;
 
-/** 翻译字符串，未找到则返回原始 key（即英文原文） */
+/** Translate a string; returns the original key (i.e. the English text) when not found */
 export function t(key: string): string {
     return _t[key] ?? key;
 }
 
 /**
- * 将快捷键字符串转为当前平台的显示格式。
- * 输入格式遵循 ProseMirror keymap 规范，如 'Mod-b'、'Mod-Shift-z'、'Alt-k'。
- * Mac:  Mod→⌘  Shift→⇧  Alt→⌥  其余字符大写，整体无分隔符
- * Win:  Mod→Ctrl  Shift→Shift  Alt→Alt  其余字符大写，以 '+' 分隔
+ * Convert a shortcut string to the current platform's display format.
+ * Input follows the ProseMirror keymap convention, e.g. 'Mod-b', 'Mod-Shift-z', 'Alt-k'.
+ * Mac:  Mod→⌘  Shift→⇧  Alt→⌥  remaining chars uppercased, no separator
+ * Win:  Mod→Ctrl  Shift→Shift  Alt→Alt  remaining chars uppercased, joined with '+'
  */
 export function kbd(shortcut: string): string {
     const parts = shortcut.split("-");

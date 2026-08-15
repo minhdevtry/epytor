@@ -76,7 +76,7 @@ export function showImagePicker(
     urlInput.addEventListener("keydown", (e) => { if (e.key === "Enter") urlInsertBtn.click(); });
     panelUrl.appendChild(urlInput);
     panelUrl.appendChild(urlInsertBtn);
-    // 路径自动补全
+    // Path auto-complete
     attachImgPathComplete(urlInput);
 
     // Project images panel

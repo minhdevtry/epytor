@@ -1,4 +1,4 @@
-// ─── 常量 ────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────
 const TOOLTIP_SPACING_PX = 6;
 const TOOLTIP_VIEWPORT_MARGIN_PX = 4;
 
@@ -14,16 +14,16 @@ function getTooltip(): HTMLElement {
 }
 
 interface TooltipOptions {
-    /** 显示位置：'below'（默认，工具栏用）或 'above' */
+    /** Display position: 'below' (default, used by the toolbar) or 'above' */
     placement?: "above" | "below";
-    /** 仅在文本被截断（出现 ...）时才显示 */
+    /** Show only when the text is truncated (showing '...') */
     truncatedOnly?: boolean;
 }
 
 interface TooltipHandle {
-    /** 动态更新 tooltip 文案（不影响显示状态） */
+    /** Update the tooltip text dynamically (does not affect visibility) */
     setText(t: string): void;
-    /** 主动显示 tooltip（用于点击后反馈等场景） */
+    /** Imperatively show the tooltip (for scenarios like click feedback) */
     show(): void;
 }
 
@@ -45,7 +45,7 @@ function position(
         y = elRect.top - tipRect.height - TOOLTIP_SPACING_PX;
         if (y < TOOLTIP_VIEWPORT_MARGIN_PX) {
             y = elRect.bottom + TOOLTIP_SPACING_PX;
-        } // 上方不够则降到下方
+        } // Not enough room above → drop below
     } else {
         y = elRect.bottom + TOOLTIP_SPACING_PX;
         if (y + tipRect.height > window.innerHeight - TOOLTIP_VIEWPORT_MARGIN_PX) {
@@ -65,14 +65,14 @@ function position(
     tip.style.visibility = "visible";
 }
 
-/** 立即隐藏当前显示的 tooltip（用于点击交互后主动清除） */
+/** Hide the currently-shown tooltip immediately (used after a click interaction to actively clear it) */
 export function hideTooltip(): void {
     if (tooltipEl) {
         tooltipEl.style.display = "none";
     }
 }
 
-/** 命令式：立即在指定元素旁显示 tooltip，无需事件绑定 */
+/** Imperative: show a tooltip next to the given element immediately, without binding events */
 export function showTooltipAt(
     el: Element,
     text: string,
@@ -83,7 +83,7 @@ export function showTooltipAt(
     position(tip, el as HTMLElement, placement);
 }
 
-/** 替换原生 title，改用 VSCode 风格的自定义 tooltip */
+/** Replace the native title with a VSCode-style custom tooltip */
 export function applyTooltip(
     el: HTMLElement,
     text: string,

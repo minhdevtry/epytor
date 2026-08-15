@@ -1,115 +1,115 @@
-# 项目指令 — epytor
+# Project Instructions — epytor
 
-## 语言
+## Language
 
-* **使用越南语（Tiếng Việt）与用户回复沟通**
-
-***
-
-## 需求
-
-* 新功能设计文档放在 `docs/specs/`，文件名 `YYYY-MM-DD-<功能名>.md`
-* 先写 spec 再开发——明确需求范围、交互边界、验收标准
-* 配置项参考见[开发 → 配置参考](#配置参考)
+* **Reply to users in Vietnamese**
 
 ***
 
-## 开发
+## Requirements
 
-### 基本规则
+* New feature design docs go in `docs/specs/`, filename `YYYY-MM-DD-<feature-name>.md`
+* Write the spec before development — define the requirement scope, interaction boundaries, and acceptance criteria
+* See [Development → Configuration Reference](#configuration-reference) for settings
 
-* **包管理器**：必须用 `pnpm`，禁止 npm/yarn
-* **构建**：修改代码后执行 `pnpm build` 验证编译无误
-* **调试**：F5 启动扩展调试实例（`.vscode/launch.json`）
-* **语言**：全部 TypeScript；Extension 端用 `tsconfig.json`，WebView 端用 `tsconfig.webview.json`
-* **双目标构建**：`dist/extension.js`（Node.js）+ `dist/webview.js`（Browser），由 `esbuild.mjs` 完成
-* **Git commit 规范**：commit 描述用**中文**，类型前缀保留英文（`feat:`、`fix:`、`refactor:`、`chore:`、`docs:` 等）。例：`feat: 新增XXXX功能`、`fix: 修复XXXX问题`
-* **逐项提交**：todo list 中每完成一个独立任务**必须**单独 `git commit`，禁止多个 todo 混在一个 commit 中（方便出问题时精确回溯）
-* **诚实原则**：不确定的事直接说"不确定"，禁止编造 URL、issue 编号、API 接口、文档引用或任何事实性信息
-* **优雅原则**：禁止 hack 或补丁式写法，优先使用框架/库官方 API、CSS 变量、配置回调等正路方案
-* **自检原则**：代码移动/提取后**必须**搜索确认旧位置已删除，不得留有死代码或同名遮蔽；标记 roadmap 条目完成前逐项列出实际完成项与未完成项，不得将部分完成标记为整体完成
-* **查证原则**：引用文件位置、函数名、调用关系时，若不确定则先 grep 确认再写，禁止凭记忆编造
+***
 
-### 架构约束
+## Development
 
-* WebView ↔ Extension 通信**只通过** `webview/messaging.ts` 中封装的函数
-* WebView 侧不直接 `import` VSCode API，通过 `acquireVsCodeApi()` 获取句柄
-* CSS 必须使用 `--vscode-*` 变量以适配亮/暗主题
-* 不在模块外部维护全局状态（单例除外，如 editor view）
+### Basic Rules
 
-### 关键文件速查
+* **Package manager**: must use `pnpm`; npm/yarn are forbidden
+* **Build**: run `pnpm build` after every code change to verify compilation
+* **Debug**: F5 launches the extension debug instance (`.vscode/launch.json`)
+* **Language**: TypeScript only; extension side uses `tsconfig.json`, WebView side uses `tsconfig.webview.json`
+* **Dual-target build**: `dist/extension.js` (Node.js) + `dist/webview.js` (Browser), built by `esbuild.mjs`
+* **Git commit convention**: commit message **in Chinese**, type prefix kept in English (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, etc.). Example: `feat: add XXXX feature`, `fix: fix XXXX issue`
+* **Per-item commits**: every independent task in the todo list **must** be committed separately; multiple todos must never be mixed into one commit (so issues can be traced back precisely)
+* **Honesty principle**: when uncertain, just say "not sure"; never fabricate URLs, issue numbers, API endpoints, doc references, or any factual information
+* **Elegance principle**: hacks and patch-style writing are forbidden; prefer framework/library official APIs, CSS variables, configuration callbacks, and other clean approaches
+* **Self-check principle**: after moving/extracting code you **must** search to confirm the old location is deleted; no dead code or same-name shadowing; before marking a roadmap item as done, list what is actually completed and what is not — never mark partial completion as full completion
+* **Verification principle**: when citing file locations, function names, or call relationships, grep to confirm before writing; never rely on memory
+
+### Architecture Constraints
+
+* WebView ↔ Extension communication goes **only** through the functions in `webview/messaging.ts`
+* The WebView side does not `import` the VSCode API directly; it gets a handle via `acquireVsCodeApi()`
+* CSS must use `--vscode-*` variables to adapt to light/dark themes
+* Do not maintain global state outside of modules (singletons excepted, e.g. editor view)
+
+### Key File Reference
 
 ```
-src/extension.ts                         — 扩展入口，注册 CustomEditorProvider
-src/MarkdownEditorProvider.ts            — Provider 核心（消息路由、自动保存、revert）
-src/utils/getNonce.ts                    — CSP nonce 生成
-src/utils/imageService.ts               — 图片本地保存（MD5 去重）+ 服务器上传
-src/i18n/webviewTranslations.ts         — WebView 翻译数据
-webview/index.ts                         — WebView 入口（消息路由、DOM 事件委托、品牌标识注入）
-webview/editor.ts                        — CrepeBuilder 入口（Milkdown 7.21.2 + Crepe 原生功能注册）
-webview/messaging.ts                     — WebView ↔ Extension 消息协议（唯一通信层）
-webview/style.css                        — VSCode 主题全覆盖（--vscode-* CSS 变量，覆盖 Crepe 组件）
-webview/i18n/index.ts                    — t() / kbd() 翻译函数
-webview/ui/icons.ts                      — SVG 图标
-webview/ui/tooltip.ts                    — Tooltip 组件
-webview/utils/themeBus.ts               — Mermaid/CodeMirror 深浅主题统一事件总线
-webview/components/selectionToolbar/index.ts — 选区变更回调（驱动源码行号映射）
-webview/components/toc/index.ts         — 目录（TOC）面板（吸底工具栏下方、可固定、可拖拽宽度）
-webview/components/imageView/index.ts   — 图片 NodeView（选中/lightbox/工具栏/缩放 handle）
-webview/components/findBar/index.ts     — 编辑器内查找栏（Cmd/Ctrl+F）
-webview/components/pathLink/            — 路径链接自动补全
-webview/headingIds.ts                    — 标题 id 管理（不操作 DOM，仅保留签名）
-docs/specs/                              — 功能 spec 文档
-docs/roadmap.md                          — 项目路线图（面向用户的功能规划）
-docs/tech-debt.md                        — 技术债务清单（面向开发者的代码改进）
+src/extension.ts                         — Extension entry, registers CustomEditorProvider
+src/MarkdownEditorProvider.ts            — Provider core (message routing, auto-save, revert)
+src/utils/getNonce.ts                    — CSP nonce generation
+src/utils/imageService.ts               — Image local save (MD5 dedup) + server upload
+src/i18n/webviewTranslations.ts         — WebView translation data
+webview/index.ts                         — WebView entry (message routing, DOM event delegation, brand badge injection)
+webview/editor.ts                        — CrepeBuilder entry (Milkdown 7.21.2 + Crepe native features registration)
+webview/messaging.ts                     — WebView ↔ Extension message protocol (the only communication layer)
+webview/style.css                        — VSCode theme coverage (--vscode-* CSS variables, overriding Crepe components)
+webview/i18n/index.ts                    — t() / kbd() translation functions
+webview/ui/icons.ts                      — SVG icons
+webview/ui/tooltip.ts                    — Tooltip component
+webview/utils/themeBus.ts               — Mermaid/CodeMirror light/dark theme unified event bus
+webview/components/selectionToolbar/index.ts — Selection change callback (drives source line number mapping)
+webview/components/toc/index.ts         — Table of Contents (TOC) panel (below the sticky toolbar, pinnable, resizable)
+webview/components/imageView/index.ts   — Image NodeView (select / lightbox / toolbar / resize handle)
+webview/components/findBar/index.ts     — In-editor find bar (Cmd/Ctrl+F)
+webview/components/pathLink/            — Path link auto-completion
+webview/headingIds.ts                    — Heading id management (does not touch DOM, only keeps the signature)
+docs/specs/                              — Feature spec documents
+docs/roadmap.md                          — Project roadmap (user-facing feature planning)
+docs/tech-debt.md                        — Tech debt list (developer-facing code improvements)
 ```
 
-### 配置参考
+### Configuration Reference
 
-| 设置项 | 类型 | 默认值 | 说明 |
+| Setting | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `epytor.autoSave` | boolean | `true` | 编辑后自动写盘 |
-| `epytor.autoSaveDelay` | number | `1000` | 防抖延迟（ms） |
+| `epytor.autoSave` | boolean | `true` | Auto-write to disk after editing |
+| `epytor.autoSaveDelay` | number | `1000` | Debounce delay (ms) |
 
 ***
 
-## 测试
+## Testing
 
-### 技术栈
+### Tech Stack
 
-| 层次 | 框架 | 适用范围 |
+| Layer | Framework | Scope |
 | :--- | :--- | :--- |
-| Extension 单元测试 | **Vitest 2.x**（Node 环境） | `src/utils/`、`src/MarkdownDocument.ts` |
-| WebView 单元测试 | **Vitest 2.x + jsdom 24.x** | `webview/utils/`、`webview/messaging.ts` |
-| 集成测试（计划中） | **@vscode/test-electron + Mocha** | 需真实 VSCode Extension Host |
+| Extension unit tests | **Vitest 2.x** (Node environment) | `src/utils/`, `src/MarkdownDocument.ts` |
+| WebView unit tests | **Vitest 2.x + jsdom 24.x** | `webview/utils/`, `webview/messaging.ts` |
+| Integration tests (planned) | **@vscode/test-electron + Mocha** | Requires a real VSCode Extension Host |
 
-`vscode` 模块通过 `__mocks__/vscode.ts` 统一 mock，由 `vitest.config.ts` 的 `resolve.alias` 注入，禁止在单个测试文件中 `vi.mock("vscode")`。
+The `vscode` module is mocked uniformly through `__mocks__/vscode.ts` and injected by `resolve.alias` in `vitest.config.ts`; do not call `vi.mock("vscode")` inside individual test files.
 
-### 命令
+### Commands
 
 ```bash
-pnpm test              # 一次性运行全部单元测试
-pnpm test:watch        # 监听模式（开发期间使用）
-pnpm test:coverage     # 运行测试并生成覆盖率报告（coverage/）
+pnpm test              # Run all unit tests once
+pnpm test:watch        # Watch mode (use during development)
+pnpm test:coverage     # Run tests and generate coverage report (coverage/)
 ```
 
-### 目录与命名
+### Directory and Naming
 
 ```
-src/__tests__/           — Extension 侧单元测试（Node 环境）
-webview/__tests__/       — WebView 侧单元测试（jsdom 环境）
-webview/__tests__/setup.ts  — jsdom 全局 setup（注入 acquireVsCodeApi）
-shared/__tests__/        — 共享类型测试
-__mocks__/vscode.ts      — vscode API 统一 mock
+src/__tests__/           — Extension-side unit tests (Node environment)
+webview/__tests__/       — WebView-side unit tests (jsdom environment)
+webview/__tests__/setup.ts  — jsdom global setup (injects acquireVsCodeApi)
+shared/__tests__/        — Shared type tests
+__mocks__/vscode.ts      — vscode API unified mock
 ```
 
-* 测试文件命名：`<模块名>.test.ts`，与被测文件同名
-* 测试结构遵循 **AAA 原则**（Arrange / Act / Assert），`describe` → `it` 两层
-* `it` 描述格式：`输入条件 应该 期望结果`（中文）
+* Test file naming: `<module-name>.test.ts`, same name as the file under test
+* Test structure follows the **AAA principle** (Arrange / Act / Assert), with `describe` → `it` two layers
+* `it` description format: `input condition should expected result` (Chinese)
 
-### 覆盖率要求
+### Coverage Requirements
 
-| 模块 | 行覆盖率下限 |
+| Module | Minimum line coverage |
 | :--- | :--- |
 | `src/utils/imageService.ts` | ≥ 85% |
 | `src/utils/getNonce.ts` | 100% |
@@ -117,197 +117,196 @@ __mocks__/vscode.ts      — vscode API 统一 mock
 | `src/utils/contentTransform.ts` | ≥ 90% |
 | `src/utils/lineMap.ts` | ≥ 90% |
 | `webview/utils/slug.ts` | ≥ 90% |
-| **整体** | ≥ 70% |
+| **Overall** | ≥ 70% |
 
-### 强制流程
+### Mandatory Workflow
 
-**每次代码改动**（bug 修复、新功能、重构还债）必须完整走完以下流程：
+Every code change (bug fix, new feature, refactor debt repayment) must complete the full workflow below:
 
 ```
-代码改动 → pnpm build → pnpm test → 输出手测清单 → vscode_askQuestions 逐项确认 → git commit
+Code change → pnpm build → pnpm test → output manual test checklist → vscode_askQuestions item-by-item confirmation → git commit
 ```
 
-各阶段详细要求：
+Detailed requirements for each stage:
 
-**阶段一：自动化验证**
+**Stage 1: Automated Verification**
 
-1. 运行 `pnpm build` 确认编译无误
-2. 运行 `pnpm test` 确认全部测试通过
-3. 任一失败则先修复，不得跳过
+1. Run `pnpm build` to confirm compilation succeeds
+2. Run `pnpm test` to confirm all tests pass
+3. If any fail, fix them first; do not skip
 
-**阶段二：人工验收**
+**Stage 2: Manual Acceptance**
 
-1. **输出手测清单**：列出受影响的交互路径和验收点，每条一行，编号排序
-2. **逐项确认**：通过 `vscode_askQuestions` 弹出确认框（每屏 ≤4 项，超过则分屏）
-3. 开发者逐项选择「✅ 通过」或「🛑 有问题」
-4. 全部通过 → 进入阶段三；有任一未通过 → 修复后重新从阶段一开始
+1. **Output manual test checklist**: list the affected interaction paths and acceptance points, one per line, numbered in order
+2. **Item-by-item confirmation**: pop up a confirmation dialog via `vscode_askQuestions` (≤4 items per screen; split if more)
+3. Developer selects "✅ Pass" or "🛑 Has Issue" for each item
+4. All pass → proceed to Stage 3; any fail → fix and restart from Stage 1
 
-**阶段三：提交**
+**Stage 3: Commit**
 
-方可 `git commit`（遵循[逐项提交](#基本规则)规则）
+Only then may you `git commit` (follow the [per-item commits](#basic-rules) rule)
 
 ***
 
-**功能开发后**附加要求：
+**After feature development** additional requirements:
 
-* 编写对应单元测试（核心逻辑、边界值、异常路径各至少一个用例）
+* Write corresponding unit tests (at least one case each for core logic, edge values, and error paths)
 
-**Bug 修复后**附加要求：
+**After bug fixes** additional requirements:
 
-* 先补充**能复现该 bug 的测试用例**（写在修复同一 commit 内）
-* 确认该用例在修复前失败、修复后通过
+* First add a **test case that reproduces the bug** (in the same commit as the fix)
+* Confirm the case fails before the fix and passes after
 
-**git push 前**：
+**Before `git push`**:
 
-* **必须**执行 `pnpm test`，全部通过才允许推送
+* **Must** run `pnpm test`; all must pass before pushing
 
-### 测试失败处理
+### Test Failure Handling
 
 ```
-测试失败
+Test failed
   │
-  ├─ 是新引入的失败？→ 定位代码变更，修复后重新运行
+  ├─ Is it a newly introduced failure? → Locate the code change, fix it and rerun
   │
-  ├─ 是测试预期不符实现（实现已有意变更）？→ 同步更新测试
+  ├─ Does the test expectation not match the implementation (intentional change)? → Update the test in sync
   │
-  └─ 是环境/依赖问题？→ 检查 jsdom 版本、vscode mock 是否完整
+  └─ Is it an environment/dependency issue? → Check jsdom version, vscode mock completeness
 ```
 
-**禁止行为**：
+**Forbidden behavior**:
 
-* 禁止跳过（`it.skip`）或注释失败的测试用例来让 CI 通过
-* 禁止修改测试预期值来掩盖 bug（除非实现有意变更且经过评审）
-* 禁止在未运行测试的情况下 push 到 `main` 或 `dev` 分支
+* Skipping (`it.skip`) or commenting out failing test cases to make CI pass is forbidden
+* Modifying test expected values to mask a bug is forbidden (unless the implementation has been intentionally changed and reviewed)
+* Pushing to `main` or `dev` without running tests is forbidden
 
-### Mock 规范
+### Mock Conventions
 
-* 每个 `describe` 块在 `beforeEach` 中调用 `vi.clearAllMocks()` 重置 mock 状态
-* 文件系统操作统一 mock `vscode.workspace.fs`（禁止使用真实 fs 写磁盘）
-* 依赖时间的逻辑使用 `vi.useFakeTimers()` / `vi.useRealTimers()`，禁止 `setTimeout` 真实等待
-* 禁止测试 `private` 类方法，通过公共接口验证行为
+* Each `describe` block calls `vi.clearAllMocks()` in `beforeEach` to reset mock state
+* Filesystem operations uniformly mock `vscode.workspace.fs` (real `fs` writes to disk are forbidden)
+* Time-dependent logic uses `vi.useFakeTimers()` / `vi.useRealTimers()`; do not actually wait via `setTimeout`
+* Do not test `private` class methods; verify behavior through public interfaces
 
-### CI 自动化
+### CI Automation
 
-每次 push/PR 到 `main`/`dev` 自动运行测试 + 覆盖率检查 + 构建验证，配置见 `.github/workflows/ci.yml`。
+Every push/PR to `main`/`dev` automatically runs tests + coverage checks + build verification; see `.github/workflows/ci.yml` for config.
 
 ***
 
-## 发布
+## Release
 
-### 文档角色
+### Document Roles
 
-| 文件 | 用途 | 更新时机 |
+| File | Purpose | Update Timing |
 | :--- | :--- | :--- |
-| `README.md` / `README.zh-CN.md` | 用户文档：功能介绍、安装方式、配置项、**已知限制** | 功能变更或发现新限制时 |
-| `CONTRIBUTING.md` / `CONTRIBUTING.zh-CN.md` | 贡献指南：开发环境、提交流程、Bug 报告 | 开发流程或分支策略变更时 |
-| `CHANGELOG.md` / `CHANGELOG.zh-CN.md` | 版本变更记录（[Keep a Changelog](https://keepachangelog.com/) 格式），**英文在前、中文在后** | **发布新版本时** |
+| `README.md` / `README.zh-CN.md` | User docs: feature overview, install, settings, **known limitations** | When features change or new limitations are discovered |
+| `CONTRIBUTING.md` / `CONTRIBUTING.zh-CN.md` | Contribution guide: dev environment, submission flow, bug reports | When dev flow or branch strategy changes |
+| `CHANGELOG.md` / `CHANGELOG.zh-CN.md` | Version change log ([Keep a Changelog](https://keepachangelog.com/) format), **English first, Chinese second** | **When releasing a new version** |
 
-### 发布流程（必须严格按顺序）
+### Release Workflow (must follow in order)
 
-**阶段一：内容确认**（编辑前）
+**Stage 1: Content Confirmation** (before editing)
 
-执行任何编辑操作前，必须将以下内容逐项展示给用户确认：
+Before performing any edit, show the following to the user for confirmation item by item:
 
-1. `README.md` + `README.zh-CN.md` 是否有本次发布相关的改动
-2. `CHANGELOG.md` + `CHANGELOG.zh-CN.md` 新版本 section 的完整内容
-3. `docs/roadmap.md` 是否有条目需要标记完成或调整
-4. `package.json` 版本号
-5. 合并 commit message
-6. Tag annotation 内容
-
-***
-
-**阶段二：编辑 & 验证**
-
-1. **确认所有改动已提交到** **`dev`** **分支**
-2. **更新** **`CHANGELOG.md`** **和** **`CHANGELOG.zh-CN.md`**：新版本 section 放在文件最顶部
-3. **更新** **`package.json`** **版本号**
-4. **运行** **`pnpm test`** **确认全部通过**
-5. **运行** **`pnpm build`** **确认编译无误**
+1. Whether `README.md` + `README.zh-CN.md` have release-related changes
+2. The full content of the new version section in `CHANGELOG.md` + `CHANGELOG.zh-CN.md`
+3. Whether any items in `docs/roadmap.md` need to be marked done or adjusted
+4. `package.json` version number
+5. Merge commit message
+6. Tag annotation content
 
 ***
 
-**阶段三：最终确认**（编辑后、发布前）
+**Stage 2: Edit & Verify**
 
-所有编辑完成后，**再次将实际改动展示给用户确认**（CHANGELOG diff、版本号、commit message、tag annotation），用户确认后方可继续。
-
-***
-
-**阶段四：发布**
-
-6. **合并** **`dev`** **→** **`main`**：`git checkout main && git merge dev --no-ff -m "chore: 合并 dev → main，发布 v<VERSION>"`
-7. **推送两个分支**：`git push origin dev main`
-8. **打 tag 触发发布**：`git tag -a v<VERSION> -m "v<VERSION>: <简述>" && git push origin v<VERSION>`
-9. **切回** **`dev`**：`git checkout dev`
-
-### CI 自动化
-
-推送 `v*.*.*` tag 后自动打包 VSIX、发布到 VS Code Marketplace、创建 GitHub Release，配置见 `.github/workflows/release.yml`。
+1. **Confirm all changes are committed to the `dev` branch**
+2. **Update `CHANGELOG.md` and `CHANGELOG.zh-CN.md`**: the new version section goes at the top of the file
+3. **Update the `package.json` version number**
+4. **Run `pnpm test`** to confirm all tests pass
+5. **Run `pnpm build`** to confirm compilation succeeds
 
 ***
 
-## Issue 管理
+**Stage 3: Final Confirmation** (after editing, before release)
 
-### 标签体系
+After all edits are done, **show the user the actual changes again for confirmation** (CHANGELOG diff, version number, commit message, tag annotation); only after the user confirms may you continue.
 
-| 标签 | 用途 |
+***
+
+**Stage 4: Release**
+
+6. **Merge `dev` → `main`**: `git checkout main && git merge dev --no-ff -m "chore: merge dev → main, release v<VERSION>"`
+7. **Push both branches**: `git push origin dev main`
+8. **Tag to trigger release**: `git tag -a v<VERSION> -m "v<VERSION>: <brief summary>" && git push origin v<VERSION>`
+9. **Switch back to `dev`**: `git checkout dev`
+
+### CI Automation
+
+After pushing a `v*.*.*` tag, automatically package the VSIX, publish to VS Code Marketplace, and create a GitHub Release; see `.github/workflows/release.yml` for config.
+
+***
+
+## Issue Management
+
+### Label System
+
+| Label | Purpose |
 | :--- | :--- |
-| `bug` | 已确认的 bug |
-| `bug` + `known-limitation` | 已知限制（开发完成后仍未修复的问题） |
-| `enhancement` + `roadmap` | 计划功能（处于路线图中） |
-| `enhancement` | 其他功能改进 |
+| `bug` | Confirmed bug |
+| `bug` + `known-limitation` | Known limitation (issue still present after development) |
+| `enhancement` + `roadmap` | Planned feature (in the roadmap) |
+| `enhancement` | Other feature improvements |
 
-### 与路线联动
+### Roadmap Linkage
 
-* Issue 状态变化影响路线时，同步更新 `docs/roadmap.md`
-* 路线图中的条目如有对应 Issue，在 roadmap 中标注 issue 编号
+* When issue status changes affect the roadmap, update `docs/roadmap.md` in sync
+* If a roadmap item has a corresponding issue, annotate the issue number in the roadmap
 
-### 模板
+### Templates
 
-Issue 使用 `.yml` Issue Forms（结构化表单），模板文件见 `.github/ISSUE_TEMPLATE/`：
+Issues use `.yml` Issue Forms (structured forms); template files are in `.github/ISSUE_TEMPLATE/`:
 
-| 模板 | 文件 | 自动标签 |
+| Template | File | Auto Label |
 |------|------|----------|
-| Bug 报告 | `bug_report.yml` | `bug` |
-| 功能需求 | `feature_request.yml` | `enhancement` |
+| Bug report | `bug_report.yml` | `bug` |
+| Feature request | `feature_request.yml` | `enhancement` |
 
-* `blank_issues_enabled: false`（`config.yml`），强制使用模板，不允许空白 issue
+* `blank_issues_enabled: false` (in `config.yml`) forces template usage; blank issues are not allowed
 
-* 标签由模板 `labels:` 字段自动设置，用户无需手动选择
+* Labels are set automatically by the template's `labels:` field; users do not need to select them manually
 
-* 非 Bug 功能的讨论引导至 [Discussions](https://github.com/peiyucn/epytor/discussions)
+* Non-bug feature discussions are routed to [Discussions](https://github.com/peiyucn/epytor/discussions)
 
-* **开发过程中触发**：当出现以下情况时，主动提醒用户创建 Issue：
+* **Trigger during development**: when any of the following occur, proactively remind the user to create an issue:
 
-  * 发现无法在本次修复的 bug
-  * 产生新功能想法但暂不开发
-  * 发现需要记录的技术债务
-  * 提示语示例："这个 bug 暂时修不了，需要创建一个 Issue 记录吗？"
-
-***
-
-## 路线
-
-项目路线图见 `docs/roadmap.md`，**仅记录未来计划**，不写已发布的版本内容。
-
-规划新功能或阶段进度有变化时同步更新。
+  * You discover a bug that cannot be fixed in this round
+  * You come up with a new feature idea but are not developing it yet
+  * You discover a tech debt item that needs recording
+  * Example prompt: "This bug can't be fixed for now — would you like me to create an Issue to track it?"
 
 ***
 
-## 上游限制
+## Roadmap
 
-以下限制来自 Milkdown / Crepe / ProseMirror 等上游依赖，EPYTOR 无法自行修复。升级上游依赖时需逐项验证是否已解决。
+The project roadmap is at `docs/roadmap.md`; **record future plans only** — do not include already-released version content.
 
-| # | 限制 | 来源 | 追踪 |
+Update it synchronously when planning new features or when stage progress changes.
+
+***
+
+## Upstream Limitations
+
+The following limitations come from upstream dependencies such as Milkdown / Crepe / ProseMirror, and EPYTOR cannot fix them on its own. When upgrading upstream dependencies, verify each item one by one to see whether it has been resolved.
+
+| # | Limitation | Source | Tracking |
 |---|------|------|------|
-| 1 | 行内样式（粗体、斜体、行内代码等）尾部无后续内容时无法退出 | Milkdown | [Milkdown#2413](https://github.com/Milkdown/milkdown/issues/2413) |
-| 2 | 有序列表多层级编号均为十进制（不区分 a.b.c. / i.ii.iii.） | Milkdown 内核 | [Milkdown#2415](https://github.com/Milkdown/milkdown/issues/2415) |
-| 3 | 表格单击选中整格暂时关闭 | Crepe | [Milkdown#2414](https://github.com/Milkdown/milkdown/issues/2414) |
+| 1 | Inline styles (bold, italic, inline code, etc.) at the end of content cannot exit | Milkdown | [Milkdown#2413](https://github.com/Milkdown/milkdown/issues/2413) |
+| 2 | Ordered list multi-level numbering is all decimal (no a.b.c. / i.ii.iii. distinction) | Milkdown kernel | [Milkdown#2415](https://github.com/Milkdown/milkdown/issues/2415) |
+| 3 | Table single-click cell selection is temporarily disabled | Crepe | [Milkdown#2414](https://github.com/Milkdown/milkdown/issues/2414) |
 
-**维护规则**：
+**Maintenance rules**:
 
-* 发现新的上游限制时追加到此表，同时在各 `README` 已知限制中标记 `⚠️ 上游` / `⚠️ Upstream`
-* 升级依赖版本时对照此表逐项验证，已解决的条目从表中移除，写入 CHANGELOG 的 Fixed
-* 优先在对应上游仓库提 issue，将链接填入"追踪"列
-* **向上游提 issue 时必须遵循对方模板规范**：标题带 `[Bug]` 或 `[Feature]` 前缀，正文结构化（复现步骤 / 期望行为 / 实际行为 / 运行环境）。若对方使用 `.yml` Issue Forms，`gh issue create` CLI 无法触发模板校验，需手动对齐模板要求的字段
-
+* When a new upstream limitation is discovered, append it to this table and mark it `⚠️ Upstream` in each `README` known limitations section
+* When upgrading dependencies, verify each item in this table; remove resolved entries and write them under Fixed in the CHANGELOG
+* Prefer filing issues in the corresponding upstream repo and put the link in the "Tracking" column
+* **When filing an upstream issue, follow the other side's template spec**: title should have a `[Bug]` or `[Feature]` prefix; body should be structured (repro steps / expected / actual / environment). If the other side uses `.yml` Issue Forms, the `gh issue create` CLI cannot trigger template validation, so manually align with the fields required by the template

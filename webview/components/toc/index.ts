@@ -16,7 +16,7 @@ const TOC_WIDTH = 200;
 const TOC_MIN_WIDTH = 200;
 const TOC_MAX_WIDTH = 500;
 
-/** 从 EditorView 提取所有 heading 节点 */
+/** Extract all heading nodes from the EditorView */
 function getHeadings(view: EditorView): HeadingEntry[] {
     const headings: HeadingEntry[] = [];
     view.state.doc.nodesBetween(0, view.state.doc.content.size, (node, pos) => {
@@ -27,7 +27,7 @@ function getHeadings(view: EditorView): HeadingEntry[] {
     return headings;
 }
 
-/** 根据 heading 在文档中的位置找到对应的标题 DOM 元素 */
+/** Find the corresponding heading DOM element by the heading's position in the document */
 function findHeadingElement(view: EditorView, pos: number): HTMLElement | null {
     const dom = view.nodeDOM(pos) as HTMLElement | null;
     if (dom?.matches("h1,h2,h3,h4,h5,h6")) return dom;
@@ -71,7 +71,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     headerTitle.className = "toc-header-title";
     headerTitle.textContent = t("Table of Contents");
 
-    // ── 全部折叠/展开按钮 ───────────────────────────────────
+    // ── Collapse-all / Expand-all button ───────────────────────────────────
     const collapseAllBtn = document.createElement("button");
     collapseAllBtn.className = "toc-pin-btn";
     collapseAllBtn.tabIndex = -1;
@@ -87,7 +87,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         collapseAllTip.setText(anyExpanded ? t("Collapse all") : t("Expand all"));
     }
 
-    // ── 固定按钮 ──────────────────────────────────────────────
+    // ── Pin button ──────────────────────────────────────────────
     const pinBtn = document.createElement("button");
     pinBtn.className = "toc-pin-btn";
     pinBtn.tabIndex = -1;
@@ -104,7 +104,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     panel.appendChild(header);
     panel.appendChild(list);
 
-    // ── 右侧 Tab（独立 fixed 元素，JS 同步 left 对齐 panel 右边缘）──
+    // ── Right Tab (independent fixed element; JS syncs `left` to align with the panel's right edge)──
     const tabEl = document.createElement("button");
     tabEl.className = "toc-toggle-tab";
     tabEl.tabIndex = -1;
@@ -115,7 +115,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     let isPinned = false;
     let panelWidth = TOC_WIDTH;
 
-    // 从 webview 状态恢复固定设置和面板宽度
+    // Restore the pin setting and panel width from the webview state
     const savedState = getWebviewState();
     if (savedState?.tocPinned) {
         isPinned = true;
@@ -126,7 +126,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     }
     panel.style.width = `${panelWidth}px`;
 
-    // ── 折叠状态 ──────────────────────────────────────────────
+    // ── Collapse state ──────────────────────────────────────────────
     const collapsedHeadings = new Set<number>();
     if (Array.isArray(savedState?.tocCollapsed)) {
         for (const pos of savedState.tocCollapsed) {
@@ -135,12 +135,12 @@ export function initToc(getEditorView: () => EditorView | null): {
     }
     updateCollapseBtn();
 
-    // ── Pin 按钮点击 ─────────────────────────────────────────
+    // ── Pin button click ─────────────────────────────────────────
     pinBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         isPinned = !isPinned;
         pinBtn.classList.toggle("toc-pin-btn--active", isPinned);
-        // 钉住时不注册外部点击关闭；取消固定后若面板仍打开则补注册
+        // When pinned, do not register the outside-click closer; after unpinning, re-register if the panel is still open
         if (!isPinned && isOpen && !isAutoShown) {
             setTimeout(() => {
                 document.addEventListener("mousedown", outsideClickHandler);
@@ -150,7 +150,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         setWebviewState({ ...(getWebviewState() ?? {}), tocPinned: isPinned, tocWidth: panelWidth });
     });
 
-    // ── 全部折叠/展开点击 ──────────────────────────────────────
+    // ── Collapse-all / Expand-all click ──────────────────────────────────────
     collapseAllBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         const view = getEditorView();
@@ -243,7 +243,7 @@ export function initToc(getEditorView: () => EditorView | null): {
                         const top = el.getBoundingClientRect().top + window.scrollY - topbarH - VIEWPORT_PADDING;
                         window.scrollTo({ top, behavior: "smooth" });
                     }
-                } catch { /* heading 元素已不在 DOM 中，忽略此次跳转 */ }
+                } catch { /* heading element is no longer in the DOM; ignore this jump */ }
             });
 
             item.appendChild(label);
@@ -253,7 +253,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     }
 
     function outsideClickHandler(e: MouseEvent): void {
-        if (isPinned) return; // 钉住时不因外部点击关闭
+        if (isPinned) return; // When pinned, outside clicks do not close
         if (!panel.contains(e.target as Node)) {
             close();
         }
@@ -293,7 +293,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         updateTabPos();
         syncBodyPadding();
         if (!auto && !isPinned) {
-            // 手动打开才注册外部点击关闭（自动展开时或钉住时 TOC 持久显示）
+            // Only register the outside-click closer when opened manually (auto-shown or pinned TOC stays visible)
             setTimeout(() => {
                 document.addEventListener("mousedown", outsideClickHandler);
             }, 0);
@@ -308,14 +308,14 @@ export function initToc(getEditorView: () => EditorView | null): {
         }
     }
 
-    // Tab：关闭时点按=toggle，展开时点按=toggle / 拖拽=调整宽度
+    // Tab: when closed, click=toggle; when open, click=toggle / drag=resize
     let tabDragStart = 0;
     let tabDragWidth = 0;
     let tabDragging = false;
     tabEl.addEventListener("mousedown", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // 关闭状态：不进入拖拽，直接 toggle
+        // Closed state: don't enter drag, just toggle
         if (!isOpen) { toggle(); return; }
         tabDragStart = e.clientX;
         tabDragWidth = panelWidth;
@@ -345,7 +345,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         document.addEventListener("mouseup", onUp);
     });
 
-    // ── 自动展开检测 ──────────────────────────────────────
+    // ── Auto-show detection ──────────────────────────────────────
     function hasEnoughSpace(): boolean {
         const editorEl = document.getElementById("editor");
         if (!editorEl) {
@@ -355,7 +355,7 @@ export function initToc(getEditorView: () => EditorView | null): {
     }
 
     function checkAutoShow(): void {
-        if (isPinned) return; // 钉住时不因窗口尺寸变化自动关闭
+        if (isPinned) return; // When pinned, do not auto-close on window resize
         if (hasEnoughSpace() && !isOpen) {
             openPanel(true);
         } else if (!hasEnoughSpace() && isAutoShown) {
@@ -363,7 +363,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         }
     }
 
-    // ── 动态对齐到 topbar 底部，同步 tab 垂直位置 ──────────
+    // ── Dynamically align to the bottom of the topbar; sync the tab's vertical position ──────────
     function updatePanelPosition(): void {
         const topbar = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
         const topbarH = Math.round(topbar?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT);

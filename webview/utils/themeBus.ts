@@ -7,14 +7,14 @@ function isDark(): boolean {
         || document.body.classList.contains("vscode-high-contrast");
 }
 
-/** 订阅主题切换。立即回调当前值，之后每次切换触发。返回取消函数。 */
+/** Subscribe to theme changes. Invokes the callback immediately with the current value, then on every change. Returns an unsubscribe function. */
 export function onThemeChange(fn: ThemeListener): () => void {
     fn(isDark());
     listeners.add(fn);
     return () => listeners.delete(fn);
 }
 
-// 单例 Observer 监听 body class 变化
+// Singleton Observer watching body class changes
 let started = false;
 function start(): void {
     if (started) return;

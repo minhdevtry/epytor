@@ -1,15 +1,15 @@
-/* ─── TOC 共享变量 ─────────────────────────────────── */
+/* ─── TOC shared variables ─────────────────────────────────── */
 :root {
     --toc-bg: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-background) 93%, #808080) 85%, transparent);
     --toc-blur: blur(12px);
 }
 
-/* ─── TOC 目录面板 ───────────────────────────────────── */
+/* ─── TOC panel ───────────────────────────────────── */
 .toc-panel {
     position: fixed;
     top: 36px;
     right: 0;
-    /* width: 由 JS 动态设置，默认 200px */
+    /* width: set dynamically by JS, default 200px */
     width: 200px;
     height: calc(100vh - 36px);
     box-sizing: border-box;
@@ -22,7 +22,7 @@
     transform: translateX(100%);
     transition: transform 0.2s ease;
     overflow: visible;
-    visibility: hidden; /* 等 toolbar 就绪后再显示 */
+    visibility: hidden; /* Show only after the toolbar is ready */
     border-left: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.18));
 }
 
@@ -55,7 +55,7 @@
     min-width: 0;
 }
 
-/* ─── TOC 头按钮（对齐顶部工具栏风格）──────────────── */
+/* ─── TOC header buttons (align with the top toolbar style)──────────────── */
 .toc-pin-btn {
     display: inline-flex;
     align-items: center;
@@ -154,7 +154,7 @@
 }
 
 .toc-item--h1 { font-weight: 600; }
-/* h2-h6 文字大小统一，不做区别 */
+/* h2-h6 font sizes are unified, no distinction */
 
 .toc-empty {
     padding: 16px 12px;
@@ -163,7 +163,7 @@
     text-align: center;
 }
 
-/* ─── TOC 右侧/左侧 Tab（独立 fixed，JS 同步 right，与 panel 同色同 blur）─── */
+/* ─── TOC right/left Tab (independent fixed, JS syncs right, same color/blur as the panel)─── */
 .toc-toggle-tab {
     position: fixed;
     top: 36px;
@@ -181,14 +181,14 @@
     transition: right 0.2s ease, background 0.2s ease;
     font-size: 0;
     color: transparent;
-    visibility: hidden; /* 等 toolbar 就绪后再显示 */
+    visibility: hidden; /* Show only after the toolbar is ready */
 }
 
 .toc-toggle-tab:hover {
     background: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-background) 80%, #808080) 45%, transparent);
 }
 
-/* 中间两条小竖线 */
+/* Two small vertical lines in the middle */
 .toc-toggle-tab::after {
     content: '';
     position: absolute;
@@ -196,7 +196,7 @@
     background:
         linear-gradient(currentColor, currentColor) 4px center / 1.5px 30px no-repeat,
         linear-gradient(currentColor, currentColor) calc(100% - 4px) center / 1.5px 30px no-repeat;
-    /* 14px宽：4px边距 + 1.5px线 + 3px间距 + 1.5px线 + 4px边距 */
+    /* 14px wide: 4px margin + 1.5px line + 3px gap + 1.5px line + 4px margin */
     color: color-mix(in srgb, var(--vscode-editor-foreground) 35%, transparent);
     opacity: 0.65;
     transition: opacity 0.2s ease;
@@ -206,7 +206,7 @@
     opacity: 1;
 }
 
-/* 拖拽时全局禁用文字选中，并关掉所有过渡动画避免延迟 */
+/* During drag: disable text selection globally, and turn off transition animations to avoid lag */
 body.toc-resizing {
     user-select: none;
     -webkit-user-select: none;
@@ -218,8 +218,8 @@ body.toc-resizing .milkdown-top-bar {
     transition: none !important;
 }
 
-/* 钉住时编辑器内容左移/留出右侧空间，不被固定面板遮挡 */
-/* padding-right / right 由 JS 动态设置，此处只控制过渡 */
+/* When pinned, the editor content shifts left / leaves room on the right so the pinned panel doesn't cover it */
+/* padding-right / right is set dynamically by JS; only the transition is controlled here */
 body.toc-pinned {
     transition: padding-right 0.2s ease;
 }

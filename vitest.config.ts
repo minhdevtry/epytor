@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 const alias = {
-    // 将 vscode 模块重定向到 mock 实现，Extension 侧单元测试所需
+    // Redirect the vscode module to the mock implementation, needed for extension-side unit tests
     vscode: path.resolve(__dirname, "__mocks__/vscode.ts"),
     "@": path.resolve(__dirname, "webview"),
 };

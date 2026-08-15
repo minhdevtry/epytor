@@ -9,21 +9,21 @@ import {
 
 const PATH_ACTIVE_CLASS = "path-complete-item--active";
 
-// ─── 常量 ────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────
 const PATH_RETRIGGER_DELAY_MS = 50;
 const PATH_SUGGESTION_TIMEOUT_MS = 5000;
 const PATH_DEBOUNCE_MS = 200;
 
-// 触发补全的路径前缀检测
+// Path prefix detection that triggers completion
 const PATH_PREFIX_REGEX = /^(@\/|\.{1,2}\/|[a-zA-Z0-9_-][a-zA-Z0-9._-]*\/)/;
 
 type SuggestionItem = { path: string; isDir: boolean };
 type SuggestCallback = (items: SuggestionItem[]) => void;
 
-// 路径补全回调 map：id → resolve
+// Path completion callback map: id → resolve
 const _pendingSuggestions = new Map<string, SuggestCallback>();
 
-/** 外部调用此函数分发 pathSuggestions 消息 */
+/** External callers use this to dispatch pathSuggestions messages */
 export function dispatchPathSuggestions(id: string, items: SuggestionItem[]): void {
     const cb = _pendingSuggestions.get(id);
     if (cb) {
@@ -32,7 +32,7 @@ export function dispatchPathSuggestions(id: string, items: SuggestionItem[]): vo
     }
 }
 
-/** 获取当前光标所在的 inline code 元素（排除 pre>code 和 a>code） */
+/** Get the inline code element where the current cursor sits (exclude pre>code and a>code) */
 function getActiveInlineCode(): HTMLElement | null {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) { return null; }
@@ -47,7 +47,7 @@ function getActiveInlineCode(): HTMLElement | null {
     return code as HTMLElement;
 }
 
-/** 通过当前 ProseMirror 选区位置查找 inlineCode mark 的文本范围 */
+/** Locate the text range of the inlineCode mark at the current ProseMirror selection */
 function getCodeNodeRangeFromSelection(view: EditorView): { from: number; to: number } | null {
     const { state } = view;
     const codeMark = state.schema.marks["inlineCode"];
@@ -174,7 +174,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         });
         notifyGetPathSuggestions(id, query);
 
-        // 超时清理
+        // Timeout cleanup
         setTimeout(() => {
             if (_pendingSuggestions.has(id)) {
                 _pendingSuggestions.delete(id);
@@ -182,7 +182,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         }, PATH_SUGGESTION_TIMEOUT_MS);
     }
 
-    // 键盘导航（capture 阶段，优先于编辑器处理）
+    // Keyboard navigation (capture phase, takes priority over the editor)
     document.addEventListener("keydown", (e) => {
         if (!state.el) { return; }
 
@@ -219,7 +219,7 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         }
     }, true);
 
-    // 输入时触发补全（debounce 200ms）
+    // Trigger completion on input (debounce 200ms)
     document.addEventListener("keyup", (e) => {
         if (["Escape", "ArrowDown", "ArrowUp", "Enter", "Tab"].includes(e.key)) { return; }
 
@@ -236,14 +236,14 @@ export function initPathComplete(getEditorViewFn: () => EditorView | null): void
         }, PATH_DEBOUNCE_MS);
     });
 
-    // 点击其他区域关闭下拉
+    // Click elsewhere closes the dropdown
     document.addEventListener("mousedown", (e) => {
         if (state.el && !state.el.contains(e.target as Node)) {
             closeDropdown();
         }
     }, true);
 
-    // 失焦关闭
+    // Close on blur
     window.addEventListener("blur", () => {
         closeDropdown();
     });

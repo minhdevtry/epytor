@@ -1,80 +1,80 @@
-# 技术债务
+# Tech Debt
 
-> 面向开发者的代码质量改进清单，不涉及用户可见功能变更。
-> 最后更新：2026-07-17
-
-***
-
-## 待处理
-
-* [x] **`resolveCustomEditor` & `MarkdownEditorProvider` 拆分** — 提取 `PathSuggestionService` / `ImageManagementService` / `DocumentSyncService`（993→450 行）
-* [x] **`editor.ts` 插件与 Modal 拆分** — 提取 8 个 prose plugin 到 `webview/plugins/` 和 3 个 Modal 到 `webview/ui/modals/`（1603→550 行）
-* [x] **Dead code 清理** — 移除 `selectionToolbar/` 目录与 `webview/utils.ts`，清理 `esbuild.mjs` 中冗余 Vue define
-* [x] **File Watcher Race Condition 修复** — 采用 Content Hash MD5 对比替代 1500ms 计时器，避免并发写盘触发错误 revert
-
-### 🟡 中优先级（每次改一点）
-
-* [ ] **代码块全屏按钮注入** — MutationObserver 改为 Crepe NodeView 扩展
-* [ ] **CodeMirror 主题补配** — MutationObserver 改为 Compartment 初始化时传入
+> A code quality improvement list aimed at developers; no user-facing feature changes.
+> Last updated: 2026-07-17
 
 ***
 
-## 已清偿
+## Pending
 
-### 🔴 高优先级
+* [x] **`resolveCustomEditor` & `MarkdownEditorProvider` split** — Extracted `PathSuggestionService` / `ImageManagementService` / `DocumentSyncService` (993 → 450 lines)
+* [x] **`editor.ts` plugins and Modal split** — Extracted 8 prose plugins into `webview/plugins/` and 3 Modals into `webview/ui/modals/` (1603 → 550 lines)
+* [x] **Dead code cleanup** — Removed the `selectionToolbar/` directory and `webview/utils.ts`, cleaned up the redundant Vue define in `esbuild.mjs`
+* [x] **File Watcher race condition fix** — Adopted content hash MD5 comparison in place of the 1500ms timer, avoiding erroneous reverts caused by concurrent writes
 
-* [x] **`setupSelectionToolbar` 拆分** — 提取 `createFormatDropdown` / `createAlignmentDropdown` / `createTableDeleteButtons` 三个模块函数（554→277 行）
-* [x] **`initToc` 拆分** — 提取 `getHeadings` / `findHeadingElement` / `hasChildren` / `isHeadingVisible` 到模块级（406→338 行）
-* [x] **`createImageView` 拆分** — 提取 `startToolbarInlineEdit` 通用内联编辑辅助，消除 `startCaptionEdit`/`startSrcEdit` 重复（~80 行共用），同步修复路径解析不存在的文件产生畸形 URL
-* [x] **魔法数字常量化** — 新增 `shared/constants.ts`，提取 25 个命名常量，替换 ~55 处硬编码数字
-* [x] **`buildTopBar` 类型安全** — 已使用 Crepe 官方上下文类型移除 `builder`、菜单项和回调中的 14 处 `as any`
+### 🟡 Medium Priority (incremental)
 
-### 🟡 中优先级
+* [ ] **Inject fullscreen button into code blocks** — Change MutationObserver to a Crepe NodeView extension
+* [ ] **CodeMirror theme alignment** — Change MutationObserver to be passed in via Compartment at init
 
-* [x] **下拉补全重复** — `pathComplete` / `imgPathComplete` → 提取 `closeDropdown`/`updateActiveItem` 到 `ui/dropdownComplete.ts`（~40 行重复消除）
-* [x] **确认/取消编辑重复** — `startCaptionEdit` / `startSrcEdit` → 提取 `startToolbarInlineEdit` 到 `imageView/index.ts` 模块级
-* [x] **顶栏 P 下拉菜单不显示** — `.top-bar-inner` 的 `overflow: hidden` 裁剪了 Crepe heading dropdown；改为 `overflow: visible` 并补充 CSS 回归测试
-* [x] **空 catch 块**（12 处）— 已全部添加描述性注释（4 处已有充分注释未改，8 处补充）
+***
 
-### 配置项检修
+## Paid Off
 
-* [x] 全部 13 个配置项已验证在代码中实际使用，无死配置。
+### 🔴 High Priority
+
+* [x] **`setupSelectionToolbar` split** — Extracted `createFormatDropdown` / `createAlignmentDropdown` / `createTableDeleteButtons` (554 → 277 lines)
+* [x] **`initToc` split** — Extracted `getHeadings` / `findHeadingElement` / `hasChildren` / `isHeadingVisible` to module level (406 → 338 lines)
+* [x] **`createImageView` split** — Extracted the `startToolbarInlineEdit` shared inline-edit helper, eliminated the duplication between `startCaptionEdit`/`startSrcEdit` (~80 lines shared), and synchronously fixed malformed URLs caused by resolving non-existent paths during path resolution
+* [x] **Magic number constantification** — Added `shared/constants.ts`, extracted 25 named constants, replaced ~55 hardcoded numbers
+* [x] **`buildTopBar` type safety** — Used Crepe's official context types to remove 14 `as any` from `builder`, menu items, and callbacks
+
+### 🟡 Medium Priority
+
+* [x] **Dropdown completion duplication** — `pathComplete` / `imgPathComplete` → extracted `closeDropdown`/`updateActiveItem` to `ui/dropdownComplete.ts` (~40 lines of duplication removed)
+* [x] **Confirm/cancel edit duplication** — `startCaptionEdit` / `startSrcEdit` → extracted `startToolbarInlineEdit` to module level in `imageView/index.ts`
+* [x] **Top bar P dropdown not displayed** — `.top-bar-inner`'s `overflow: hidden` was clipping the Crepe heading dropdown; changed to `overflow: visible` and added CSS regression tests
+* [x] **Empty catch blocks** (12) — All annotated with descriptive comments (4 already had sufficient comments, 8 added)
+
+### Settings audit
+
+* [x] All 13 settings have been verified to be in actual use in code; no dead settings.
   * `autoSave` / `autoSaveDelay` → `MarkdownEditorProvider._scheduleAutoSaveOrMarkDirty`
-  * `codeBlockMaxHeight` / `editorMaxWidth` / `fontFamily` / `imageSelectionColor` → 注入 CSS 变量
-  * `defaultMode` → `extension.ts` 编辑器关联同步
-  * `debugMode` → 全局调试日志开关 + WebView 同步
-  * `imageStorage` / `imageLocalPath` / `imageServer*` → `imageService.ts` 图片上传流程
+  * `codeBlockMaxHeight` / `editorMaxWidth` / `fontFamily` / `imageSelectionColor` → injected as CSS variables
+  * `defaultMode` → `extension.ts` editor association sync
+  * `debugMode` → global debug log toggle + WebView sync
+  * `imageStorage` / `imageLocalPath` / `imageServer*` → `imageService.ts` image upload flow
 
-### 测试补齐
+### Test coverage
 
-* [x] **`webview/utils/themeBus.ts`** — `isDark()` / `onThemeChange()` 已补 jsdom 测试，行覆盖率 100%
-* [x] **`webview/i18n/index.ts`** — `t()` / `kbd()` Mac/Win 分支已补测试，行覆盖率 100%
-* [x] **`src/MarkdownDocument.ts`** — 已补 `saveAs` 取消与 `dispose` 边界，行覆盖率 100%
-* [x] **`src/utils/imageService.ts`** — 已补目录读取失败、非文件目录项与上传超时边界，行覆盖率 100%
+* [x] **`webview/utils/themeBus.ts`** — `isDark()` / `onThemeChange()` jsdom tests added; line coverage 100%
+* [x] **`webview/i18n/index.ts`** — Mac/Win branches of `t()` / `kbd()` tested; line coverage 100%
+* [x] **`src/MarkdownDocument.ts`** — `saveAs` cancel and `dispose` edge cases covered; line coverage 100%
+* [x] **`src/utils/imageService.ts`** — Directory-read failure, non-file directory entries, and upload-timeout boundaries covered; line coverage 100%
 
 ***
 
-## 暂缓处理
+## Deferred
 
-以下项目已识别但当前不紧急，择机处理。
+The items below have been identified but are not urgent; handle them opportunistically.
 
-### 🔴 上游 workaround
+### 🔴 Upstream workaround
 
-* [ ] **`cellClickFixPlugin`**（~130 行，[editor.ts:236-363](../webview/editor.ts#L236)）— `filterTransaction` + `appendTransaction` + `requestAnimationFrame` 多层拦截，对抗 Crepe 表格单击行为不稳定。**需等 Milkdown 上游修复后移除。**
+* [ ] **`cellClickFixPlugin`** (~130 lines, [editor.ts:236-363](../webview/editor.ts#L236)) — `filterTransaction` + `appendTransaction` + `requestAnimationFrame` multi-layer interception to counter Crepe's unstable table click behavior. **Remove after the Milkdown upstream fix.**
 
-### 🟠 DOM 刮削 / MutationObserver 反模式（剩余）
+### 🟠 DOM scraping / MutationObserver anti-pattern (remaining)
 
-* [ ] **语言列表键盘导航**（[index.ts:608-635](../webview/index.ts#L608)）— 操作 `.language-list-item` 内部 DOM。影响面小，暂缓。
+* [ ] **Language list keyboard navigation** ([index.ts:608-635](../webview/index.ts#L608)) — Manipulates internal DOM of `.language-list-item`. Small surface area, deferred.
 
-### 🟡 类型安全（剩余）
+### 🟡 Type safety (remaining)
 
-* [ ] **119 处** **`!important`**（[style.css](../webview/style.css)）— 量大，需逐个分析替代方案。
+* [ ] **119 `!important`** in [style.css](../webview/style.css) — Large count; needs to be analyzed one by one for alternatives.
 
-### 🟢 脆弱事件处理
+### 🟢 Fragile event handling
 
-* [ ] **`capture: true` 事件监听**（5 处）— Milkdown 短期不会大改事件机制，暂不处理。
-* [ ] **链接点击 `stopImmediatePropagation`**（[index.ts:371](../webview/index.ts#L371)）— 运行稳定，暂不处理。
+* [ ] **`capture: true` event listener** (5 instances) — Milkdown won't overhaul the event mechanism in the short term, no action.
+* [ ] **Link click `stopImmediatePropagation`** ([index.ts:371](../webview/index.ts#L371)) — Stable in practice, no action.
 
-### 工具链
+### Tooling
 
-* [ ] **集成测试**：`@vscode/test-electron + Mocha` 未搭建 — 主要覆盖 `extension.ts` + `MarkdownEditorProvider.ts`，单测无法触及的 wiring 逻辑
+* [ ] **Integration tests**: `@vscode/test-electron + Mocha` not yet set up — mainly covers `extension.ts` + `MarkdownEditorProvider.ts`, wiring logic that unit tests cannot reach

@@ -11,7 +11,7 @@ const commonOptions = {
     logLevel: 'info',
 };
 
-// Extension 主进程（Node.js）
+// Extension main process (Node.js)
 const extensionBuild = {
     ...commonOptions,
     entryPoints: ['src/extension.ts'],
@@ -22,7 +22,7 @@ const extensionBuild = {
     external: ['vscode'],
 };
 
-// WebView 前端（Browser）
+// WebView frontend (Browser)
 const webviewBuild = {
     ...commonOptions,
     entryPoints: { webview: 'webview/index.ts' },

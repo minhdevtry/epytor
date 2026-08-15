@@ -33,15 +33,15 @@ pnpm run package   # Package into releases/*.vsix
 
 Coding and testing standards are defined in [AGENTS.md](./AGENTS.md):
 
-- [Development rules](./AGENTS.md#开发) — package manager, TypeScript, commit format, architecture constraints, key files
-- [Testing standards](./AGENTS.md#测试) — framework, coverage thresholds, workflow, mock conventions
+- [Development rules](./AGENTS.md#development) — package manager, TypeScript, commit format, architecture constraints, key files
+- [Testing standards](./AGENTS.md#testing) — framework, coverage thresholds, workflow, mock conventions
 
 Quick reference:
 
 - **Package manager**: `pnpm` only — no npm or yarn
 - **Communication**: WebView ↔ Extension only through `webview/messaging.ts`
 - **CSS**: Must use `--vscode-*` variables for light/dark theme support
-- **Git commits**: English type prefix + Chinese description (e.g. `feat: 新增功能`)
+- **Git commits**: English type prefix + Chinese description (e.g. `feat: add new feature`)
 - **Testing**: `pnpm test` must pass before pushing (CI runs on every push/PR to `main`/`dev` — see `.github/workflows/ci.yml`)
 
 ## Submitting Changes

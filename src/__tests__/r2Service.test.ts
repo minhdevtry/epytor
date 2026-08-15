@@ -26,18 +26,18 @@ function createMockConfig(values: Record<string, unknown>): vscode.WorkspaceConf
 }
 
 describe("r2Service cryptographic helpers", () => {
-    it("sha256Hex 应正确计算字符串与 Buffer 的 SHA-256 哈希值", () => {
+    it("sha256Hex correctly computes the SHA-256 hash of a string and a Buffer", () => {
         expect(sha256Hex("hello")).toBe("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
         expect(sha256Hex(Buffer.from("hello"))).toBe("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
     });
 
-    it("hmacSha256 应正确生成 HMAC-SHA256 Buffer", () => {
+    it("hmacSha256 correctly produces an HMAC-SHA256 Buffer", () => {
         const hmac = hmacSha256("key", "data");
         expect(hmac).toBeInstanceOf(Buffer);
         expect(hmac.toString("hex")).toBe("5031fe3d989c6d1537a013fa6e739da23463fdaec3b70137d828e36ace221bd0");
     });
 
-    it("getSignatureKey 应按 AWS SigV4 规范派生密钥", () => {
+    it("getSignatureKey derives a key according to the AWS SigV4 spec", () => {
         const key = getSignatureKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY", "20130524", "us-east-1", "s3");
         expect(key).toBeInstanceOf(Buffer);
         expect(key.length).toBe(32);
@@ -49,7 +49,7 @@ describe("uploadImageToR2", () => {
         vi.clearAllMocks();
     });
 
-    it("缺少必填配置时 应抛出明确的错误信息", async () => {
+    it("throws a clear error when required config is missing", async () => {
         const cfg = createMockConfig({
             "r2.accountId": "",
             "r2.accessKeyId": "",
@@ -62,7 +62,7 @@ describe("uploadImageToR2", () => {
         );
     });
 
-    it("正确配置并在 R2 返回 200 时 应成功上传并返回 publicDomain URL", async () => {
+    it("uploads successfully and returns the publicDomain URL when configured and R2 returns 200", async () => {
         const cfg = createMockConfig({
             "r2.accountId": "acc123",
             "r2.accessKeyId": "key123",
@@ -103,7 +103,7 @@ describe("uploadImageToR2", () => {
         expect(mockReq.end).toHaveBeenCalled();
     });
 
-    it("当未配置 publicDomain 时 应回退到 r2.cloudflarestorage.com 默认 URL", async () => {
+    it("falls back to the r2.cloudflarestorage.com default URL when publicDomain is not configured", async () => {
         const cfg = createMockConfig({
             "r2.accountId": "acc123",
             "r2.accessKeyId": "key123",
@@ -132,7 +132,7 @@ describe("uploadImageToR2", () => {
         expect(url).toMatch(/\.jpg$/);
     });
 
-    it("当服务器返回 HTTP 403 时 应抛出详细错误", async () => {
+    it("throws a detailed error when the server returns HTTP 403", async () => {
         const cfg = createMockConfig({
             "r2.accountId": "acc123",
             "r2.accessKeyId": "key123",
@@ -160,7 +160,7 @@ describe("uploadImageToR2", () => {
         );
     });
 
-    it("当网络请求出现错误时 应抛出 Network Error", async () => {
+    it("throws a Network Error when the network request fails", async () => {
         const cfg = createMockConfig({
             "r2.accountId": "acc123",
             "r2.accessKeyId": "key123",

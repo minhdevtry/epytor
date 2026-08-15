@@ -1,6 +1,6 @@
 /**
- * VSCode API 最小可用 mock，供 Vitest 单元测试使用。
- * 通过 vitest.config.ts 的 resolve.alias 将 "vscode" 重定向到此文件。
+ * Minimal usable mock of the VSCode API, for Vitest unit tests.
+ * The "vscode" module is redirected to this file via `resolve.alias` in vitest.config.ts.
  */
 import * as nodePath from "path";
 import { vi } from "vitest";

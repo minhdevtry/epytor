@@ -1,3 +1,3 @@
-# 项目指令 — epytor
+# Project Instructions — epytor
 
-> 完整项目指令见 [AGENTS.md](./AGENTS.md)。本文件仅做索引，实际内容以 `AGENTS.md` 为准。
+> The complete project instructions live in [AGENTS.md](./AGENTS.md). This file is just an index; the actual content is in `AGENTS.md`.

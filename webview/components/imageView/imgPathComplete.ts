@@ -9,29 +9,29 @@ import {
 
 const IMG_ACTIVE_CLASS = "img-path-complete-item--active";
 
-// ─── 常量 ────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────
 const RESOLVE_IMAGE_TIMEOUT_MS = 3000;
 const PATH_SUGGESTION_TIMEOUT_MS = 5000;
 const PATH_COMPLETE_RETRIGGER_DELAY_MS = 50;
 const PATH_COMPLETE_DEBOUNCE_MS = 200;
 const IMAGE_BLUR_CLOSE_DELAY_MS = 150;
 
-// ─── resolveImagePath 异步机制 ────────────────────────────────
+// ─── resolveImagePath async mechanism ────────────────────────────────
 const _pendingResolve = new Map<string, (uri: string) => void>();
 
-/** 由 index.ts 在收到 imagePathResolved 消息时调用 */
+/** Called by index.ts when an imagePathResolved message arrives */
 export function dispatchImagePathResolved(id: string, webviewUri: string): void {
     const cb = _pendingResolve.get(id);
     if (cb) { _pendingResolve.delete(id); cb(webviewUri); }
 }
 
-/** 将 relPath 解析为 webviewUri（异步，超时 3s 返回原值） */
+/** Resolve a relPath to a webviewUri (async; returns the original value after a 3s timeout) */
 export function resolveToWebviewUri(relPath: string): Promise<string> {
     return new Promise((resolve) => {
         const id = `rip_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
         const timer = setTimeout(() => {
             _pendingResolve.delete(id);
-            resolve(relPath); // 超时回退
+            resolve(relPath); // Fallback on timeout
         }, RESOLVE_IMAGE_TIMEOUT_MS);
         _pendingResolve.set(id, (uri) => {
             clearTimeout(timer);
@@ -41,15 +41,15 @@ export function resolveToWebviewUri(relPath: string): Promise<string> {
     });
 }
 
-// 触发路径补全的前缀检测（与 pathComplete.ts 保持一致）
+// Prefix detection that triggers path completion (kept in sync with pathComplete.ts)
 const PATH_PREFIX_REGEX = /^(@\/|\.{1,2}\/|[a-zA-Z0-9_-][a-zA-Z0-9._-]*\/)/;
 
 type SuggestCallback = (items: PathSuggestionItem[]) => void;
 
-// 回调 map：id → resolve（全局唯一，各 input 通过 id 区分）
+// Callback map: id → resolve (globally unique; each input is distinguished by id)
 const _pendingImgSuggestions = new Map<string, SuggestCallback>();
 
-/** 外部调用此函数分发 pathSuggestions 消息到本模块 */
+/** External callers use this to dispatch pathSuggestions messages to this module */
 export function dispatchImgPathSuggestions(id: string, items: PathSuggestionItem[]): void {
     const cb = _pendingImgSuggestions.get(id);
     if (cb) {
@@ -59,10 +59,10 @@ export function dispatchImgPathSuggestions(id: string, items: PathSuggestionItem
 }
 
 /**
- * 为一个 <input> 元素附加图片路径自动补全。
- * @param onEnter  dropdown 关闭时 Enter 调用（即 confirm）
- * @param onEscape dropdown 关闭时 Escape 调用（即 cancel）
- * 返回 cleanup 函数，调用后移除事件监听并关闭下拉。
+ * Attach image path auto-complete to an <input> element.
+ * @param onEnter  Called with Enter when the dropdown closes (i.e. confirm)
+ * @param onEscape Called with Escape when the dropdown closes (i.e. cancel)
+ * Returns a cleanup function that removes the event listeners and closes the dropdown.
  */
 export function attachImgPathComplete(
     input: HTMLInputElement,
@@ -155,7 +155,7 @@ export function attachImgPathComplete(
         updateActiveItem(state, IMG_ACTIVE_CLASS);
     }
 
-    // ── 触发补全请求 ───────────────────────────────────────────
+    // ── Trigger completion request ───────────────────────────────────────────
 
     function triggerSuggest(): void {
         const query = input.value.trim();
@@ -172,16 +172,16 @@ export function attachImgPathComplete(
         });
         notifyGetPathSuggestions(id, query);
 
-        // 超时清理
+        // Timeout cleanup
         setTimeout(() => {
             _pendingImgSuggestions.delete(id);
         }, PATH_SUGGESTION_TIMEOUT_MS);
     }
 
-    // ── 事件监听 ───────────────────────────────────────────────
+    // ── Event listeners ───────────────────────────────────────────────
 
     function onInput(): void {
-        // autocomplete 选中后首次 onInput 不清除 dataset（dataset 是手动输入的判断依据）
+        // Don't clear the dataset on the first onInput after an autocomplete selection (the dataset is what we use to tell manual input apart)
         if (skipDatasetClear) {
             skipDatasetClear = false;
         } else {
@@ -254,7 +254,7 @@ export function attachImgPathComplete(
     }
 
     function onBlur(): void {
-        // 延迟关闭，让 mousedown 的 applySelection 先执行
+        // Delay closing so that mousedown's applySelection runs first
         setTimeout(() => {
             if (!isDestroyed) { closeDropdown(); }
         }, IMAGE_BLUR_CLOSE_DELAY_MS);
