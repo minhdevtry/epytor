@@ -780,7 +780,7 @@ window.addEventListener(
     "keydown",
     (e) => {
         const target = e.target as HTMLElement;
-        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.closest(".cm-editor"))) {
             return;
         }
 
