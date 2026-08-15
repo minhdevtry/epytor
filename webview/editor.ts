@@ -13,17 +13,22 @@ import {
     toggleInlineCodeCommand,
     listItemSchema,
     wrapInBlockTypeCommand,
+    clearTextInCurrentBlockCommand,
+    codeBlockSchema,
+    addBlockTypeCommand,
 } from "@milkdown/kit/preset/commonmark";
 import { toggleStrikethroughCommand } from "@milkdown/kit/preset/gfm";
 import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
 import type { EditorView } from "@milkdown/kit/prose/view";
+import { Decoration, DecorationSet } from "@milkdown/kit/prose/view";
 import { undo, redo } from "@milkdown/kit/prose/history";
 import { keymap } from "@milkdown/kit/prose/keymap";
-import { Plugin, NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
+import { Plugin, PluginKey, NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
 import { liftListItem, sinkListItem } from "@milkdown/kit/prose/schema-list";
 import { lift, wrapIn } from "prosemirror-commands";
 import { CellSelection, TableMap } from "@milkdown/kit/prose/tables";
 import { $prose } from "@milkdown/kit/utils";
+import type { Ctx } from "@milkdown/kit/ctx";
 import { CrepeBuilder } from "@milkdown/crepe";
 import { linkTooltip } from "@milkdown/crepe/feature/link-tooltip";
 import { blockEdit } from "@milkdown/crepe/feature/block-edit";
@@ -572,6 +577,231 @@ export async function createEditor(
     cmObserver.observe(container, { childList: true, subtree: true });
 
     // 主题切换：CodeMirror + Mermaid 全部统一处理
+    // ─── Callout Plugin ──────────────────────────────────────────
+    const calloutPluginKey = new PluginKey("callout_decorations");
+    const calloutPlugin = $prose(() => {
+        return new Plugin({
+            key: calloutPluginKey,
+            props: {
+                decorations(state) {
+                    const decos: Decoration[] = [];
+                    state.doc.descendants((node, pos) => {
+                        if (node.type.name === "blockquote") {
+                            const firstChild = node.firstChild;
+                            if (firstChild && firstChild.type.name === "paragraph") {
+                                const text = firstChild.textContent || "";
+                                const match = text.match(/^\[!(NOTE|INFO|TIP|WARNING|CAUTION|DANGER|SUCCESS|IMPORTANT)\]/i);
+                                if (match) {
+                                    const rawType = match[1].toLowerCase();
+                                    const type = rawType === "info" ? "note" : rawType === "danger" ? "caution" : rawType;
+                                    decos.push(
+                                        Decoration.node(pos, pos + node.nodeSize, {
+                                            class: `callout callout-${type}`,
+                                        })
+                                    );
+                                }
+                            }
+                        }
+                    });
+                    return DecorationSet.create(state.doc, decos);
+                },
+            },
+        });
+    });
+
+    // ─── Video & YouTube Prompt Dialog ───────────────────────────
+    function promptVideoInsert(type: "youtube" | "video", ctx: Ctx) {
+        const overlay = document.createElement("div");
+        overlay.className = "video-prompt-modal";
+
+        const isYT = type === "youtube";
+        const titleText = isYT ? "🎥 Chèn YouTube Video" : "🎬 Chèn Video";
+        const placeholderText = isYT
+            ? "Dán link YouTube (ví dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/...)"
+            : "Dán đường dẫn Video (MP4, WebM, URL...)";
+
+        overlay.innerHTML = `
+            <div class="video-prompt-backdrop"></div>
+            <div class="video-prompt-dialog">
+                <div class="video-prompt-header">
+                    <div class="video-prompt-title">${titleText}</div>
+                    <button class="video-prompt-close">✕</button>
+                </div>
+                <div class="video-prompt-body">
+                    <input type="text" class="video-prompt-input" placeholder="${placeholderText}" />
+                    <div class="video-prompt-tip">${isYT ? "Hỗ trợ link video, Shorts, hoặc mã nhúng" : "Hỗ trợ link trực tiếp hoặc file video"}</div>
+                </div>
+                <div class="video-prompt-footer">
+                    <button class="video-prompt-cancel">Hủy</button>
+                    <button class="video-prompt-confirm">Chèn Video</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const input = overlay.querySelector<HTMLInputElement>(".video-prompt-input")!;
+        input.focus();
+
+        const close = () => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        };
+
+        const confirm = () => {
+            const url = input.value.trim();
+            if (!url) { close(); return; }
+
+            const view = ctx.get(editorViewCtx);
+            let insertHtml = "";
+            if (isYT) {
+                let videoId = "";
+                const matchYt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+                if (matchYt) {
+                    videoId = matchYt[1];
+                } else if (/^[\w-]{11}$/.test(url)) {
+                    videoId = url;
+                }
+                if (videoId) {
+                    insertHtml = `<iframe width="100%" height="380" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>\n\n`;
+                } else {
+                    insertHtml = `<iframe width="100%" height="380" src="${url}" frameborder="0" allowfullscreen></iframe>\n\n`;
+                }
+            } else {
+                insertHtml = `<video controls width="100%" src="${url}"></video>\n\n`;
+            }
+
+            const { from, to } = view.state.selection;
+            const tr = view.state.tr.insertText(insertHtml, from, to);
+            view.dispatch(tr);
+            view.focus();
+            close();
+        };
+
+        overlay.querySelector(".video-prompt-close")?.addEventListener("click", close);
+        overlay.querySelector(".video-prompt-cancel")?.addEventListener("click", close);
+        overlay.querySelector(".video-prompt-confirm")?.addEventListener("click", confirm);
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); confirm(); }
+            if (e.key === "Escape") { e.preventDefault(); close(); }
+        });
+        overlay.querySelector(".video-prompt-backdrop")?.addEventListener("click", close);
+    }
+
+    // ─── Mermaid Lightbox Zoom & Pan Modal ────────────────────────
+    function showMermaidZoomModal(svgContent: string, rawCode: string) {
+        const modal = document.createElement("div");
+        modal.className = "mermaid-zoom-modal";
+
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        modal.innerHTML = `
+            <div class="mermaid-zoom-backdrop"></div>
+            <div class="mermaid-zoom-dialog">
+                <div class="mermaid-zoom-header">
+                    <div class="mermaid-zoom-title">📊 Mermaid Diagram (Phóng to & Kéo xem)</div>
+                    <div class="mermaid-zoom-actions">
+                        <button class="mzm-btn mzm-zoom-in" title="Phóng to (+)">➕ Phóng to</button>
+                        <button class="mzm-btn mzm-zoom-out" title="Thu nhỏ (-)">➖ Thu nhỏ</button>
+                        <button class="mzm-btn mzm-zoom-reset" title="Mặc định (100%)">1:1</button>
+                        <button class="mzm-btn mzm-copy" title="Copy Mermaid Code">📋 Copy Code</button>
+                        <button class="mzm-btn mzm-close" title="Đóng (Esc)">✕</button>
+                    </div>
+                </div>
+                <div class="mermaid-zoom-viewport">
+                    <div class="mermaid-zoom-content">${svgContent}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        const contentEl = modal.querySelector<HTMLElement>(".mermaid-zoom-content")!;
+        const viewport = modal.querySelector<HTMLElement>(".mermaid-zoom-viewport")!;
+
+        const updateTransform = () => {
+            contentEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        };
+
+        viewport.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.15 : 0.85;
+            scale = Math.min(Math.max(scale * factor, 0.2), 10);
+            updateTransform();
+        });
+
+        viewport.addEventListener("mousedown", (e) => {
+            if ((e.target as HTMLElement).closest(".mzm-btn")) return;
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            viewport.style.cursor = "grabbing";
+        });
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        };
+
+        const onMouseUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                viewport.style.cursor = "grab";
+            }
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+
+        modal.querySelector(".mzm-zoom-in")?.addEventListener("click", () => {
+            scale = Math.min(scale * 1.25, 10);
+            updateTransform();
+        });
+
+        modal.querySelector(".mzm-zoom-out")?.addEventListener("click", () => {
+            scale = Math.max(scale * 0.8, 0.2);
+            updateTransform();
+        });
+
+        modal.querySelector(".mzm-zoom-reset")?.addEventListener("click", () => {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        });
+
+        const copyBtn = modal.querySelector<HTMLButtonElement>(".mzm-copy");
+        copyBtn?.addEventListener("click", () => {
+            navigator.clipboard.writeText(rawCode).then(() => {
+                copyBtn.textContent = "✓ Copied!";
+                setTimeout(() => { copyBtn.textContent = "📋 Copy Code"; }, 1500);
+            });
+        });
+
+        const close = () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+            document.removeEventListener("keydown", onKeyDown);
+            if (modal.parentNode) modal.parentNode.removeChild(modal);
+        };
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                close();
+            }
+        };
+        document.addEventListener("keydown", onKeyDown);
+
+        modal.querySelector(".mzm-close")?.addEventListener("click", close);
+        modal.querySelector(".mermaid-zoom-backdrop")?.addEventListener("click", close);
+    }
+
+    // 主题切换：CodeMirror + Mermaid 全部统一处理
     let isDark = true;
     const mermaidCodeMap = new Map<string, string>();
     let mermaidSeq = 0;
@@ -587,7 +817,12 @@ export async function createEditor(
         // 重绘已有 mermaid 预览
         mermaidCodeMap.forEach((code, key) => {
             const el = document.querySelector<HTMLElement>(`[data-mermaid-key="${key}"]`);
-            if (el) renderMermaid(code).then((svg) => { el.innerHTML = svg; }).catch(() => {});
+            if (el) {
+                renderMermaid(code).then((svg) => {
+                    const svgTarget = el.querySelector<HTMLElement>(".mermaid-rendered-svg") || el;
+                    svgTarget.innerHTML = svg;
+                }).catch(() => {});
+            }
         });
         // 重配 CodeMirror
         reconfigureAllCM();
@@ -598,15 +833,51 @@ export async function createEditor(
         if (lang.toLowerCase() !== "mermaid") return null;
         const key = `m-${++mermaidSeq}`;
         mermaidCodeMap.set(key, code);
-        apply(`<div data-mermaid-key="${key}"></div>`);
+        apply(`
+            <div class="mermaid-block-wrapper" data-mermaid-key="${key}">
+                <div class="mermaid-actions-bar">
+                    <button class="mermaid-action-btn mermaid-action-zoom" title="Phóng to sơ đồ">🔍 Phóng to</button>
+                    <button class="mermaid-action-btn mermaid-action-copy" title="Copy mã nguồn Mermaid">📋 Copy</button>
+                </div>
+                <div class="mermaid-rendered-svg"></div>
+            </div>
+        `);
         const el = () => document.querySelector(`[data-mermaid-key="${key}"]`);
         renderMermaid(code).then((svg) => {
-            const e = el();
-            if (e) e.innerHTML = svg;
+            const container = el();
+            if (container) {
+                const svgTarget = container.querySelector<HTMLElement>(".mermaid-rendered-svg");
+                if (svgTarget) {
+                    svgTarget.innerHTML = svg;
+                    svgTarget.style.cursor = "pointer";
+                    svgTarget.title = "Nhấp đúp để phóng to";
+                    svgTarget.addEventListener("dblclick", () => {
+                        showMermaidZoomModal(svg, code);
+                    });
+                }
+                const zoomBtn = container.querySelector<HTMLButtonElement>(".mermaid-action-zoom");
+                zoomBtn?.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showMermaidZoomModal(svg, code);
+                });
+                const copyBtn = container.querySelector<HTMLButtonElement>(".mermaid-action-copy");
+                copyBtn?.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(code).then(() => {
+                        copyBtn.textContent = "✓ Copied";
+                        setTimeout(() => { copyBtn.textContent = "📋 Copy"; }, 1500);
+                    });
+                });
+            }
         }).catch((err) => {
             console.warn('[mermaid] render failed:', err);
-            const e = el();
-            if (e) e.innerHTML = `<span style="color:var(--vscode-errorForeground)">Mermaid: ${err}</span>`;
+            const container = el();
+            if (container) {
+                const svgTarget = container.querySelector<HTMLElement>(".mermaid-rendered-svg");
+                if (svgTarget) svgTarget.innerHTML = `<span style="color:var(--vscode-errorForeground)">Mermaid: ${err}</span>`;
+            }
         });
     };
 
@@ -644,6 +915,68 @@ export async function createEditor(
                 codeBlock: { label: t('Code block'), icon: '' },
                 table: { label: t('Table'), icon: '' },
                 math: { label: t('Math formula'), icon: '' },
+            },
+            buildMenu: (builder) => {
+                // ─── Callout Ghi chú 5 loại ───
+                const calloutGroup = builder.addGroup('callouts', 'Callouts & Alerts');
+                const addCallout = (id: string, label: string, tag: string, iconText: string) => {
+                    calloutGroup.addItem(id, {
+                        label,
+                        icon: `<svg width="20" height="20" viewBox="0 0 24 24"><text x="2" y="17" font-size="16">${iconText}</text></svg>`,
+                        onRun: (ctx) => {
+                            const commands = ctx.get(commandsCtx);
+                            const view = ctx.get(editorViewCtx);
+                            commands.call(clearTextInCurrentBlockCommand.key);
+                            const bq = view.state.schema.nodes.blockquote;
+                            const p = view.state.schema.nodes.paragraph;
+                            if (!bq || !p) return;
+                            const text = view.state.schema.text(`[!${tag}] `);
+                            const calloutNode = bq.create(null, p.create(null, text));
+                            const tr = view.state.tr.replaceSelectionWith(calloutNode);
+                            view.dispatch(tr);
+                        },
+                    });
+                };
+
+                addCallout('callout-note', 'Note / Info', 'NOTE', 'ℹ️');
+                addCallout('callout-tip', 'Tip', 'TIP', '💡');
+                addCallout('callout-warning', 'Warning', 'WARNING', '⚠️');
+                addCallout('callout-caution', 'Danger / Caution', 'CAUTION', '🛑');
+                addCallout('callout-success', 'Success', 'SUCCESS', '✅');
+
+                // ─── Media & Video ───
+                const mediaGroup = builder.addGroup('media', 'Media & Embeds');
+                mediaGroup.addItem('youtube-video', {
+                    label: 'YouTube Video',
+                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+                    onRun: (ctx) => {
+                        const commands = ctx.get(commandsCtx);
+                        commands.call(clearTextInCurrentBlockCommand.key);
+                        promptVideoInsert('youtube', ctx);
+                    },
+                });
+                mediaGroup.addItem('custom-video', {
+                    label: 'Video Player',
+                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
+                    onRun: (ctx) => {
+                        const commands = ctx.get(commandsCtx);
+                        commands.call(clearTextInCurrentBlockCommand.key);
+                        promptVideoInsert('video', ctx);
+                    },
+                });
+                mediaGroup.addItem('mermaid-diagram', {
+                    label: 'Mermaid Diagram',
+                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="6" y1="9" x2="18" y2="15"/></svg>`,
+                    onRun: (ctx) => {
+                        const commands = ctx.get(commandsCtx);
+                        const codeBlock = codeBlockSchema.type(ctx);
+                        commands.call(clearTextInCurrentBlockCommand.key);
+                        commands.call(addBlockTypeCommand.key, {
+                            nodeType: codeBlock,
+                            attrs: { language: 'mermaid' },
+                        });
+                    },
+                });
             },
         })
         .addFeature(topBar, {
@@ -951,6 +1284,7 @@ export async function createEditor(
 
         })
         .use(listener)              // 追加 listener 用于 markdownUpdated
+        .use(calloutPlugin)         // Callouts 5 loại (Note, Tip, Warning, Danger, Success)
         .use(listLiftPlugin)        // 保留：列表 backspace
         .use(selectionPlugin)       // 保留：选区变更回调
         .use(formatKeymapPlugin)    // 保留：自定义格式化快捷键

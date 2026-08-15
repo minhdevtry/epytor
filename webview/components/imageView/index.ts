@@ -264,13 +264,43 @@ export function createImageView(
 
     let currentRatio = parseRatio((node.attrs["title"] as string) ?? "").ratio;
 
+    let rawSrc = (node.attrs["src"] as string) ?? "";
+
     // ── 图片 ──────────────────────────────────────────────────
     const img = document.createElement("img");
     img.className = "image-node";
-    img.src = (node.attrs["src"] as string) ?? "";
     img.alt = (node.attrs["alt"] as string) ?? "";
     img.draggable = false;
     let imgNaturalH = 0;
+
+    function resolveAndSetSrc(src: string): void {
+        if (!src) {
+            img.src = "";
+            return;
+        }
+        if (/^(https?:|data:|blob:|vscode-webview-|vscode-resource:)/i.test(src)) {
+            img.src = src;
+            return;
+        }
+        const cached = _relToUri.get(src);
+        if (cached) {
+            img.src = cached;
+            return;
+        }
+        resolveToWebviewUri(src).then((resolved) => {
+            if (resolved && resolved !== src) {
+                _relToUri.set(src, resolved);
+                _uriToRel.set(resolved, src);
+                img.src = resolved;
+            } else {
+                img.src = src;
+            }
+        }).catch(() => {
+            img.src = src;
+        });
+    }
+
+    resolveAndSetSrc(rawSrc);
 
     function applyRatio(): void {
         if (imgNaturalH <= 0) imgNaturalH = img.naturalHeight || 0;
@@ -291,6 +321,13 @@ export function createImageView(
     const errorPlaceholder = document.createElement("div");
     errorPlaceholder.className = "img-error-placeholder";
     errorPlaceholder.style.display = "none";
+    errorPlaceholder.title = t("Click to edit image path");
+    errorPlaceholder.style.cursor = "pointer";
+    errorPlaceholder.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startSrcEdit();
+    });
 
     let retryCount = 0;
     img.addEventListener("error", () => {
@@ -307,7 +344,7 @@ export function createImageView(
         imgErrored = true;
         img.style.display = "none";
         loadingPlaceholder.style.display = "none";
-        errorPlaceholder.innerHTML = `${IconImageOff}<span>${t("Image not found")}</span>`;
+        errorPlaceholder.innerHTML = `${IconImageOff}<span>${t("Image not found")} (${toDisplayPath(rawSrc)})</span>`;
         errorPlaceholder.style.display = "flex";
     });
 
@@ -505,7 +542,7 @@ export function createImageView(
     wrapper.appendChild(toolbar);
 
     // ── 初始化信息区 ──────────────────────────────────────────
-    let rawSrc = (node.attrs["src"] as string) ?? "";
+    rawSrc = (node.attrs["src"] as string) ?? "";
     updateInfo(rawSrc, img.alt);
     updateInfoElement(rawSrc); // 可能将 infoSpan 替换为 infoInput
 
@@ -610,7 +647,7 @@ export function createImageView(
                 imgNaturalH = 0;
                 loadingPlaceholder.style.display = "flex";
                 errorPlaceholder.style.display = "none";
-                img.src = newSrc;
+                resolveAndSetSrc(newSrc);
                 updateInfoElement(newSrc);
             }
             const newTitle = (updatedNode.attrs["title"] as string) ?? "";
