@@ -12,6 +12,7 @@ import {
     addBlockTypeCommand,
 } from "@milkdown/kit/preset/commonmark";
 import { listener } from "@milkdown/kit/plugin/listener";
+import { history } from "@milkdown/kit/plugin/history";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { undo, redo } from "@milkdown/kit/prose/history";
 import { TextSelection, type EditorState } from "@milkdown/kit/prose/state";
@@ -1021,6 +1022,7 @@ export async function createEditor(
             ]);
         })
         .use(listener)
+        .use(history)
         .use(calloutPlugin)
         .use(markHighlightPlugin)
         .use(videoDecorationPlugin)
