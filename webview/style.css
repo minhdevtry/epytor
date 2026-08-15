@@ -1233,6 +1233,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     color: initial;
 }
 
+.milkdown .ProseMirror .embedded-video-container,
 .milkdown .ProseMirror .video-block-node .embedded-video-container {
     position: relative !important;
     display: flex !important;

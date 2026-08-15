@@ -7,10 +7,10 @@
 
 ## 待处理
 
-### 🔴 高优先级（影响面大，独立处理）
-
-* [ ] **`resolveCustomEditor` 拆分** — [`MarkdownEditorProvider.ts:183`](../src/MarkdownEditorProvider.ts#L183)，322 行，可提取面板清理 / ViewState / 消息路由 / 文件监听为类方法
-* [ ] **顶栏 button tooltip 注入** — 用正路方案替代 MutationObserver + `requestAnimationFrame` 扫描 `.top-bar-item`
+* [x] **`resolveCustomEditor` & `MarkdownEditorProvider` 拆分** — 提取 `PathSuggestionService` / `ImageManagementService` / `DocumentSyncService`（993→450 行）
+* [x] **`editor.ts` 插件与 Modal 拆分** — 提取 8 个 prose plugin 到 `webview/plugins/` 和 3 个 Modal 到 `webview/ui/modals/`（1603→550 行）
+* [x] **Dead code 清理** — 移除 `selectionToolbar/` 目录与 `webview/utils.ts`，清理 `esbuild.mjs` 中冗余 Vue define
+* [x] **File Watcher Race Condition 修复** — 采用 Content Hash MD5 对比替代 1500ms 计时器，避免并发写盘触发错误 revert
 
 ### 🟡 中优先级（每次改一点）
 
