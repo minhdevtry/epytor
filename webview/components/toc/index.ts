@@ -365,10 +365,10 @@ export function initToc(getEditorView: () => EditorView | null): {
 
     // ── 动态对齐到 topbar 底部，同步 tab 垂直位置 ──────────
     function updatePanelPosition(): void {
-        // TOC 吸顶：从视口最顶部开始，全高
-        panel.style.top = '36px';
-        panel.style.height = 'calc(100vh - 36px)';
-        // tab 全高细竖条，CSS 已处理
+        const topbar = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
+        const topbarH = Math.round(topbar?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT);
+        panel.style.top = `${topbarH}px`;
+        panel.style.height = `calc(100vh - ${topbarH}px)`;
     }
 
     updateTabPos();

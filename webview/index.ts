@@ -370,6 +370,26 @@ async function initEditor(
         handleRenameImage,
         () => toc.toggle(),
     );
+
+    const syncTopBarHeight = () => {
+        const topBar = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
+        if (!topBar) return;
+        const h = Math.round(topBar.getBoundingClientRect().height);
+        if (h > 0) {
+            document.documentElement.style.setProperty("--epytor-topbar-height", `${h}px`);
+        }
+    };
+    syncTopBarHeight();
+
+    const topBarEl = document.querySelector(".milkdown-top-bar") as HTMLElement | null;
+    if (topBarEl && typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => {
+            syncTopBarHeight();
+            toc.updatePosition();
+        });
+        ro.observe(topBarEl);
+    }
+
     toc.updatePosition(); // 工具栏已就绪，更新 TOC 吸顶位置
     toc.refresh(); // 编辑器初始化完成后刷新一次
     toc.show();    // toolbar 就绪，显示 TOC 面板

@@ -24,12 +24,16 @@ body {
     line-height: 1.6;
 }
 
+:root {
+    --epytor-topbar-height: 36px;
+}
+
 /* 编辑器容器 */
 /* ─── Frontmatter 面板 ─── */
 .frontmatter-panel {
     max-width: var(--editor-max-width, min(1400px, 92vw));
     margin: 0 auto;
-    padding: 8px 48px 0;
+    padding: calc(var(--epytor-topbar-height, 36px) + 12px) 48px 0;
 }
 
 .frontmatter-table {
@@ -73,7 +77,7 @@ body {
        用户在设置中显式设定宽度时，--editor-max-width 生效，覆盖默认 */
     max-width: var(--editor-max-width, min(1400px, 92vw));
     margin: 0 auto;
-    padding: 52px 48px 80px;
+    padding: calc(var(--epytor-topbar-height, 36px) + 16px) 48px 80px;
     min-height: 100vh;
     outline: none;
 }
@@ -850,6 +854,7 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     color: var(--vscode-editor-foreground);
     user-select: none;
     pointer-events: none;
+    transition: opacity 0.15s ease;
 }
 
 /* ─── Crepe top-bar：position:fixed 吸顶 ─── */
@@ -870,6 +875,16 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
     border: none !important;
     flex-wrap: nowrap;
     container-type: inline-size;
+}
+
+/* 容器宽度 < 640px 时隐藏品牌并消除左内边距，释放横向操作空间 */
+@container (max-width: 640px) {
+    .epytor-brand {
+        opacity: 0;
+    }
+    .milkdown .milkdown-top-bar {
+        padding-left: 12px !important;
+    }
 }
 
 .milkdown .milkdown-top-bar .top-bar-inner {
