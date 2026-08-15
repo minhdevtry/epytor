@@ -655,35 +655,37 @@ function enhanceCodeBlocks(container: HTMLElement): void {
 
 /** 为 Crepe top-bar 按钮添加自定义 tooltip（i18n 翻译，无快捷键） */
 function setupTopBarTooltips(container: HTMLElement): void {
-    const TOOLTIPS = [
-        t('Table of Contents'), // toc
-        t('Undo'),             // history: undo
-        t('Redo'),             // history: redo
-        t('Bold'),             // formatting: bold
-        t('Italic'),           // formatting: italic
-        t('Strikethrough'),    // formatting: strikethrough
-        t('Inline Code'),      // formatting: code
-        t('Clear Formatting'), // formatting: clear-format
-        t('Bullet List'),      // list: bullet
-        t('Ordered List'),     // list: ordered
-        t('Task List'),        // list: task
-        t('Insert/Edit Link'), // insert: link
-        t('Insert Image'),     // insert: image
-        t('Insert Table'),     // insert: table
-        t('Code Block'),       // block: code-block
-        t('Math Formula'),     // block: math
-        t('Blockquote'),       // more: quote
-        t('Horizontal Rule'),  // more: hr
-        t('Settings'),         // settings
-    ];
+    const TOOLTIP_MAP: Record<string, string> = {
+        'toc': t('Table of Contents'),
+        'undo': t('Undo'),
+        'redo': t('Redo'),
+        'bold': t('Bold'),
+        'italic': t('Italic'),
+        'strikethrough': t('Strikethrough'),
+        'code': t('Inline Code'),
+        'clear-format': t('Clear Formatting'),
+        'highlight-color': t('Highlight'),
+        'bullet': t('Bullet list'),
+        'ordered': t('Numbered list'),
+        'task': t('Task list'),
+        'link': t('Link'),
+        'image': t('Image'),
+        'table': t('Table'),
+        'code-block': t('Code block'),
+        'math': t('Math formula'),
+        'quote': t('Quote'),
+        'hr': t('Divider'),
+        'settings': t('Settings'),
+    };
 
     const applyAll = () => {
         const topBar = container.querySelector('.milkdown-top-bar');
         if (!topBar) return;
         const items = topBar.querySelectorAll<HTMLElement>('.top-bar-item');
-        items.forEach((item, idx) => {
+        items.forEach((item) => {
             if (item.dataset.tip) return;
-            const text = TOOLTIPS[idx];
+            const key = item.getAttribute('data-key') || item.getAttribute('data-item') || '';
+            const text = (key && TOOLTIP_MAP[key]) || item.getAttribute('title') || '';
             if (text) {
                 item.dataset.tip = '1';
                 applyTooltip(item, text, { placement: 'below' });
