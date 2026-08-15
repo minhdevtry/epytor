@@ -542,7 +542,8 @@ body {
 /* ── 列表（Crepe list-item NodeView，div 结构非原生 ul/ol）── */
 .milkdown .milkdown-list-item-block {
     padding-left: 0 !important;
-    margin: 0.2em 0 !important;
+    margin: 0.25em 0 !important;
+    line-height: 1.6;
 }
 
 /* 嵌套缩进 */
@@ -550,12 +551,64 @@ body {
     padding-left: 1.5em !important;
 }
 
-/* 复选框颜色 */
+/* 复选框与列表标号颜色 */
 .milkdown .milkdown-list-item-block .label-wrapper {
     color: var(--vscode-editor-foreground) !important;
+    user-select: none;
+    transition: opacity 0.15s ease;
 }
 .milkdown .milkdown-list-item-block .label-wrapper svg {
     fill: var(--vscode-editor-foreground) !important;
+}
+.milkdown .milkdown-list-item-block input[type="checkbox"] {
+    accent-color: var(--vscode-focusBorder, #007acc);
+    cursor: pointer;
+    margin-right: 6px;
+}
+
+/* ─── Crepe Block Edit (Slash menu & block handles) ─── */
+.milkdown-block-handle {
+    color: var(--vscode-descriptionForeground);
+    border-radius: 4px;
+    transition: background 0.15s ease, opacity 0.15s ease;
+}
+.milkdown-block-handle:hover {
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    color: var(--vscode-editor-foreground);
+}
+.milkdown-slash-menu {
+    background: var(--vscode-editorWidget-background, #252526);
+    border: 1px solid var(--vscode-editorWidget-border, #454545);
+    box-shadow: var(--vscode-widget-shadow, 0 4px 12px rgba(0, 0, 0, 0.35));
+    border-radius: 6px;
+    padding: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 100;
+}
+.milkdown-slash-menu-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--vscode-descriptionForeground);
+    padding: 6px 8px 4px;
+}
+.milkdown-slash-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    color: var(--vscode-editor-foreground);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+.milkdown-slash-menu-item:hover,
+.milkdown-slash-menu-item.active {
+    background: var(--vscode-list-activeSelectionBackground, #04395e);
+    color: var(--vscode-list-activeSelectionForeground, #ffffff);
 }
 
 /* 链接 */

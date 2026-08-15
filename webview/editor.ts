@@ -20,12 +20,13 @@ import type { EditorView } from "@milkdown/kit/prose/view";
 import { undo, redo } from "@milkdown/kit/prose/history";
 import { keymap } from "@milkdown/kit/prose/keymap";
 import { Plugin, NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
-import { liftListItem } from "@milkdown/kit/prose/schema-list";
+import { liftListItem, sinkListItem } from "@milkdown/kit/prose/schema-list";
 import { lift, wrapIn } from "prosemirror-commands";
 import { CellSelection, TableMap } from "@milkdown/kit/prose/tables";
 import { $prose } from "@milkdown/kit/utils";
 import { CrepeBuilder } from "@milkdown/crepe";
 import { linkTooltip } from "@milkdown/crepe/feature/link-tooltip";
+import { blockEdit } from "@milkdown/crepe/feature/block-edit";
 import { TbUndo, TbRedo, TbImage, TbEraser, TbGear, TbToc } from "./ui/icons";
 
 // 调试日志开关（由 index.ts setDebugMode 消息驱动）
@@ -89,7 +90,7 @@ codeLanguages.push({
 //   selectionPlugin          → 选区变更回调（驱动外部 UI）
 //   formatKeymapPlugin       → 自定义格式化快捷键
 
-// 列表 Backspace：光标在行首时，层级 ≥2 → 上升一级；层级 1 → 同样上升（变为普通段落）
+// 列表快捷键：Tab 缩进一级，Shift-Tab 提升一级，行首 Backspace 上升一级/转为段落
 const listLiftPlugin = $prose((ctx) => {
     const schema = ctx.get(schemaCtx);
     const listItemType = schema.nodes["list_item"];
@@ -97,7 +98,28 @@ const listLiftPlugin = $prose((ctx) => {
         return new Plugin({});
     }
     const doLift = liftListItem(listItemType);
+    const doSink = sinkListItem(listItemType);
     return keymap({
+        Tab: (state, dispatch) => {
+            const { selection } = state;
+            const { $from } = selection;
+            let inList = false;
+            for (let d = $from.depth; d >= 0; d--) {
+                if ($from.node(d).type === listItemType) { inList = true; break; }
+            }
+            if (!inList) return false;
+            return doSink(state, dispatch);
+        },
+        "Shift-Tab": (state, dispatch) => {
+            const { selection } = state;
+            const { $from } = selection;
+            let inList = false;
+            for (let d = $from.depth; d >= 0; d--) {
+                if ($from.node(d).type === listItemType) { inList = true; break; }
+            }
+            if (!inList) return false;
+            return doLift(state, dispatch);
+        },
         Backspace: (state, dispatch) => {
             const { selection } = state;
             if (!selection.empty) return false;
@@ -597,6 +619,33 @@ export async function createEditor(
         })
         .addFeature(cursor) // 原版虚拟光标（mark 边界方向键/方向指示），z-index 已在 style.css 修复被背景盖住问题
         .addFeature(listItem)
+        .addFeature(blockEdit, {
+            textGroup: {
+                label: t('Text'),
+                text: { label: t('Text'), icon: '' },
+                h1: { label: t('Heading 1'), icon: '' },
+                h2: { label: t('Heading 2'), icon: '' },
+                h3: { label: t('Heading 3'), icon: '' },
+                h4: { label: t('Heading 4'), icon: '' },
+                h5: { label: t('Heading 5'), icon: '' },
+                h6: { label: t('Heading 6'), icon: '' },
+                quote: { label: t('Quote'), icon: '' },
+                divider: { label: t('Divider'), icon: '' },
+            },
+            listGroup: {
+                label: t('Lists'),
+                bulletList: { label: t('Bullet list'), icon: '' },
+                orderedList: { label: t('Numbered list'), icon: '' },
+                taskList: { label: t('Task list'), icon: '' },
+            },
+            advancedGroup: {
+                label: t('Advanced'),
+                image: { label: t('Image'), icon: '' },
+                codeBlock: { label: t('Code block'), icon: '' },
+                table: { label: t('Table'), icon: '' },
+                math: { label: t('Math formula'), icon: '' },
+            },
+        })
         .addFeature(topBar, {
             headingOptions: [
                 { label: 'P', level: null },

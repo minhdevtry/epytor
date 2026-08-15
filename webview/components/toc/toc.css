@@ -8,7 +8,7 @@
 .toc-panel {
     position: fixed;
     top: 36px;
-    left: 0;
+    right: 0;
     /* width: 由 JS 动态设置，默认 200px */
     width: 200px;
     height: calc(100vh - 36px);
@@ -19,10 +19,11 @@
     z-index: 101;
     display: flex;
     flex-direction: column;
-    transform: translateX(-100%);
+    transform: translateX(100%);
     transition: transform 0.2s ease;
     overflow: visible;
     visibility: hidden; /* 等 toolbar 就绪后再显示 */
+    border-left: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.18));
 }
 
 .toc-panel--open {
@@ -162,10 +163,11 @@
     text-align: center;
 }
 
-/* ─── TOC 右侧 Tab（独立 fixed，JS 同步 left，与 panel 同色同 blur）─── */
+/* ─── TOC 右侧/左侧 Tab（独立 fixed，JS 同步 right，与 panel 同色同 blur）─── */
 .toc-toggle-tab {
     position: fixed;
     top: 36px;
+    right: 0;
     width: 14px;
     height: calc(100vh - 36px);
     background: var(--toc-bg);
@@ -176,7 +178,7 @@
     cursor: col-resize;
     user-select: none;
     z-index: 102;
-    transition: left 0.2s ease, background 0.2s ease;
+    transition: right 0.2s ease, background 0.2s ease;
     font-size: 0;
     color: transparent;
     visibility: hidden; /* 等 toolbar 就绪后再显示 */
@@ -216,12 +218,12 @@ body.toc-resizing .milkdown-top-bar {
     transition: none !important;
 }
 
-/* 钉住时编辑器内容右移，不被固定面板遮挡 */
-/* padding-left / left 由 JS 动态设置，此处只控制过渡 */
+/* 钉住时编辑器内容左移/留出右侧空间，不被固定面板遮挡 */
+/* padding-right / right 由 JS 动态设置，此处只控制过渡 */
 body.toc-pinned {
-    transition: padding-left 0.2s ease;
+    transition: padding-right 0.2s ease;
 }
 
 body.toc-pinned .milkdown-top-bar {
-    transition: left 0.2s ease;
+    transition: right 0.2s ease;
 }

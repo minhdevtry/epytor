@@ -264,16 +264,16 @@ export function initToc(getEditorView: () => EditorView | null): {
         document.body.classList.toggle("toc-pinned", active);
         const topbar = document.querySelector<HTMLElement>(".milkdown-top-bar");
         if (active) {
-            document.body.style.paddingLeft = `${panelWidth}px`;
-            if (topbar) topbar.style.paddingLeft = `${panelWidth}px`;
+            document.body.style.paddingRight = `${panelWidth}px`;
+            if (topbar) topbar.style.paddingRight = `${panelWidth}px`;
         } else {
-            document.body.style.paddingLeft = '';
-            if (topbar) topbar.style.paddingLeft = '';
+            document.body.style.paddingRight = '';
+            if (topbar) topbar.style.paddingRight = '';
         }
     }
 
     function updateTabPos(): void {
-        tabEl.style.left = isOpen ? `${panelWidth}px` : '0px';
+        tabEl.style.right = isOpen ? `${panelWidth}px` : '0px';
     }
 
     function close(): void {
@@ -323,7 +323,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         document.body.classList.add("toc-resizing");
 
         function onMove(ev: MouseEvent) {
-            const delta = ev.clientX - tabDragStart;
+            const delta = tabDragStart - ev.clientX;
             if (!tabDragging && Math.abs(delta) < 3) return;
             tabDragging = true;
             const newWidth = Math.min(TOC_MAX_WIDTH, Math.max(TOC_MIN_WIDTH, tabDragWidth + delta));
@@ -351,7 +351,7 @@ export function initToc(getEditorView: () => EditorView | null): {
         if (!editorEl) {
             return false;
         }
-        return editorEl.getBoundingClientRect().left >= panelWidth;
+        return (window.innerWidth - editorEl.getBoundingClientRect().right) >= panelWidth;
     }
 
     function checkAutoShow(): void {
