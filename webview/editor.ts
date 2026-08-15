@@ -618,41 +618,43 @@ export async function createEditor(
                 decorations(state) {
                     const decos: Decoration[] = [];
                     state.doc.descendants((node, pos) => {
-                        if (node.isTextblock) {
+                        if (node.isTextblock && node.type.name !== "code_block") {
                             const text = (node.textContent || "").trim();
-                            // 1. <iframe ... src="..." ...></iframe>
-                            const iframeMatch = text.match(/^<iframe\s+[^>]*src=["']([^"']+)["'][^>]*>(?:<\/iframe>)?$/i);
+                            if (!text) return;
+
+                            // 1. YouTube Link (standalone URL or formatted)
+                            const ytMatch = text.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i);
+                            if (ytMatch) {
+                                const videoId = ytMatch[1];
+                                const widget = document.createElement("div");
+                                widget.className = "embedded-video-container";
+                                widget.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
+                                return;
+                            }
+
+                            // 2. Generic <iframe ... src="...">
+                            const iframeMatch = text.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
                             if (iframeMatch) {
                                 const src = iframeMatch[1];
                                 const widget = document.createElement("div");
                                 widget.className = "embedded-video-container";
                                 widget.innerHTML = `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
                                 decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
+                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
                                 return;
                             }
 
-                            // 2. <video ... src="..." ...></video>
-                            const videoMatch = text.match(/^<video\s+[^>]*src=["']([^"']+)["'][^>]*>(?:<\/video>)?$/i);
+                            // 3. Generic <video ... src="...">
+                            const videoMatch = text.match(/<video[^>]*\ssrc=["']([^"']+)["']/i);
                             if (videoMatch) {
                                 const src = videoMatch[1];
                                 const widget = document.createElement("div");
                                 widget.className = "embedded-video-container";
                                 widget.innerHTML = `<video src="${src}" controls></video>`;
                                 decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
-                                return;
-                            }
-
-                            // 3. Standalone YouTube Link
-                            const ytMatch = text.match(/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/i);
-                            if (ytMatch) {
-                                const videoId = ytMatch[1];
-                                const widget = document.createElement("div");
-                                widget.className = "embedded-video-container";
-                                widget.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
+                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
                                 return;
                             }
                         }
