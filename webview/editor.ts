@@ -628,54 +628,83 @@ export async function createEditor(
                 decorations(state) {
                     const decos: Decoration[] = [];
                     state.doc.descendants((node, pos) => {
-                        if (node.isTextblock && node.type.name !== "code_block") {
-                            const text = (node.textContent || "").trim();
-                            if (!text) return;
+                        if (node.type.name === "code_block") return;
 
-                            // 1. YouTube Link (standalone URL or formatted)
-                            const ytMatch = text.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i);
-                            if (ytMatch) {
-                                const videoId = ytMatch[1];
-                                const widget = document.createElement("div");
-                                widget.className = "embedded-video-container";
-                                widget.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
-                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                if (node.nodeSize > 2) {
-                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
-                                }
-                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
-                                return;
-                            }
+                        const text = (
+                            (node.attrs?.value as string) ||
+                            (node.attrs?.html as string) ||
+                            (node.attrs?.src as string) ||
+                            node.text ||
+                            node.textContent ||
+                            ""
+                        ).trim();
+                        if (!text) return;
 
-                            // 2. Generic <iframe ... src="...">
-                            const iframeMatch = text.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
-                            if (iframeMatch) {
-                                const src = iframeMatch[1];
-                                const widget = document.createElement("div");
-                                widget.className = "embedded-video-container";
-                                widget.innerHTML = `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
-                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                if (node.nodeSize > 2) {
-                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
-                                }
-                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
-                                return;
+                        // 1. YouTube Link (standalone URL, iframe, or formatted)
+                        const ytMatch = text.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/|youtube-nocookie\.com\/embed\/)([\w-]{11})/i);
+                        if (ytMatch) {
+                            const videoId = ytMatch[1];
+                            const widget = document.createElement("div");
+                            widget.className = "embedded-video-container";
+                            widget.dataset.videoId = videoId;
+                            widget.innerHTML = `
+                                <div class="video-toolbar-bar">
+                                    <div class="video-toolbar-title">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff0000" style="vertical-align:middle;margin-right:6px"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                        <span>YouTube Video Player</span>
+                                    </div>
+                                    <div class="video-toolbar-actions">
+                                        <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" class="video-action-btn" title="Mở trên YouTube">🌐 Mở tab mới</a>
+                                    </div>
+                                </div>
+                                <div class="video-iframe-wrapper">
+                                    <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                                </div>
+                            `;
+                            decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                            if (node.nodeSize > 2) {
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
                             }
+                            decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
+                            return;
+                        }
 
-                            // 3. Generic <video ... src="...">
-                            const videoMatch = text.match(/<video[^>]*\ssrc=["']([^"']+)["']/i);
-                            if (videoMatch) {
-                                const src = videoMatch[1];
-                                const widget = document.createElement("div");
-                                widget.className = "embedded-video-container";
-                                widget.innerHTML = `<video src="${src}" controls></video>`;
-                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
-                                if (node.nodeSize > 2) {
-                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
-                                }
-                                decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
-                                return;
+                        // 2. Generic <iframe ... src="...">
+                        const iframeMatch = text.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+                        if (iframeMatch) {
+                            const src = iframeMatch[1];
+                            const widget = document.createElement("div");
+                            widget.className = "embedded-video-container";
+                            widget.innerHTML = `
+                                <div class="video-iframe-wrapper">
+                                    <iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                                </div>
+                            `;
+                            decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                            if (node.nodeSize > 2) {
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
                             }
+                            decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
+                            return;
+                        }
+
+                        // 3. Generic <video ... src="...">
+                        const videoMatch = text.match(/<video[^>]*\ssrc=["']([^"']+)["']/i);
+                        if (videoMatch) {
+                            const src = videoMatch[1];
+                            const widget = document.createElement("div");
+                            widget.className = "embedded-video-container";
+                            widget.innerHTML = `
+                                <div class="video-iframe-wrapper">
+                                    <video src="${src}" controls></video>
+                                </div>
+                            `;
+                            decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                            if (node.nodeSize > 2) {
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
+                            }
+                            decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
+                            return;
                         }
                     });
                     return DecorationSet.create(state.doc, decos);

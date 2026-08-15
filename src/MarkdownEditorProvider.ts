@@ -648,7 +648,8 @@ export class MarkdownEditorProvider
              script-src 'nonce-${nonce}' ${webview.cspSource};
              img-src ${webview.cspSource} https: data: blob:;
              media-src ${webview.cspSource} https: data: blob:;
-             frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https:;
+             frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https: data: blob:;
+             child-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https: data: blob:;
              connect-src ${webview.cspSource} https: data:;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Markdown Editor</title>

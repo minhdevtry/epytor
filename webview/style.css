@@ -1221,31 +1221,73 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 
 .milkdown .ProseMirror .video-block-node .embedded-video-container {
     position: relative !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     width: 100% !important;
     max-width: 100% !important;
-    aspect-ratio: 16 / 9 !important;
-    background: #000 !important;
+    background: #111 !important;
     border-radius: 10px !important;
     overflow: hidden !important;
     pointer-events: auto !important;
     user-select: auto !important;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.2)) !important;
-    font-size: 14px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.25)) !important;
+    font-size: 13px !important;
     line-height: normal !important;
     color: #fff !important;
+    margin: 1.4em 0 !important;
 }
 
-.embedded-video-container iframe,
-.embedded-video-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+.embedded-video-container .video-toolbar-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 14px !important;
+    background: rgba(30, 30, 30, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.embedded-video-container .video-toolbar-title {
+    font-weight: 600 !important;
+    font-size: 12.5px !important;
+    color: #eee !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.embedded-video-container .video-action-btn {
+    font-size: 11.5px !important;
+    color: #38bdf8 !important;
+    text-decoration: none !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    background: rgba(56, 189, 248, 0.1) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.embedded-video-container .video-action-btn:hover {
+    background: rgba(56, 189, 248, 0.25) !important;
+    color: #7dd3fc !important;
+}
+
+.embedded-video-container .video-iframe-wrapper {
+    position: relative !important;
+    width: 100% !important;
+    padding-bottom: 56.25% !important;
+    height: 0 !important;
+    background: #000 !important;
+}
+
+.embedded-video-container .video-iframe-wrapper iframe,
+.embedded-video-container .video-iframe-wrapper video {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    display: block !important;
 }
 
 .milkdown video {
