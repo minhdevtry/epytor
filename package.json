@@ -163,10 +163,12 @@
           "type": "string",
           "enum": [
             "local",
+            "r2",
             "server"
           ],
           "enumDescriptions": [
             "%config.imageStorage.local%",
+            "%config.imageStorage.r2%",
             "%config.imageStorage.server%"
           ],
           "default": "local",
@@ -178,32 +180,68 @@
           "default": "",
           "description": "%config.imageLocalPath.description%"
         },
+        "epytor.r2.accountId": {
+          "order": 20,
+          "type": "string",
+          "default": "",
+          "description": "%config.r2.accountId.description%"
+        },
+        "epytor.r2.accessKeyId": {
+          "order": 21,
+          "type": "string",
+          "default": "",
+          "description": "%config.r2.accessKeyId.description%"
+        },
+        "epytor.r2.secretAccessKey": {
+          "order": 22,
+          "type": "string",
+          "default": "",
+          "description": "%config.r2.secretAccessKey.description%"
+        },
+        "epytor.r2.bucket": {
+          "order": 23,
+          "type": "string",
+          "default": "",
+          "description": "%config.r2.bucket.description%"
+        },
+        "epytor.r2.publicDomain": {
+          "order": 24,
+          "type": "string",
+          "default": "",
+          "description": "%config.r2.publicDomain.description%"
+        },
+        "epytor.r2.pathPrefix": {
+          "order": 25,
+          "type": "string",
+          "default": "images/",
+          "description": "%config.r2.pathPrefix.description%"
+        },
         "epytor.imageServerUrl": {
-          "order": 12,
+          "order": 30,
           "type": "string",
           "default": "",
           "description": "%config.imageServerUrl.description%"
         },
         "epytor.imageServerFieldName": {
-          "order": 13,
+          "order": 31,
           "type": "string",
           "default": "file",
           "description": "%config.imageServerFieldName.description%"
         },
         "epytor.imageServerExtraParams": {
-          "order": 14,
+          "order": 32,
           "type": "string",
           "default": "",
           "description": "%config.imageServerExtraParams.description%"
         },
         "epytor.imageServerResponsePath": {
-          "order": 15,
+          "order": 33,
           "type": "string",
           "default": "url",
           "description": "%config.imageServerResponsePath.description%"
         },
         "epytor.imageSelectionColor": {
-          "order": 16,
+          "order": 34,
           "type": "string",
           "default": "rgba(52, 211, 153, 0.6)",
           "description": "%config.imageSelectionColor.description%"

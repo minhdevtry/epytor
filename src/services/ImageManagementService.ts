@@ -2,6 +2,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import type { MarkdownDocument } from "../MarkdownDocument";
 import { saveImageLocally, uploadImageToServer } from "../utils/imageService";
+import { uploadImageToR2 } from "../utils/r2Service";
 
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff', '.ico']);
 const CANDIDATE_DIRS = ['images', 'imgs', 'assets/images', 'assets'];
@@ -20,7 +21,9 @@ export class ImageManagementService {
         const storage = cfg.get<string>('imageStorage', 'local');
         try {
             let url: string;
-            if (storage === 'server') {
+            if (storage === 'r2') {
+                url = await uploadImageToR2(cfg, data, mimeType, altText);
+            } else if (storage === 'server') {
                 url = await uploadImageToServer(cfg, data, mimeType, altText);
             } else {
                 const { relPath, absUri } = await saveImageLocally(document.uri, cfg, data, mimeType, altText);
