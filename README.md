@@ -3,10 +3,10 @@
 [![Version](https://img.shields.io/github/package-json/v/peiyucn/epytor?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=peiyucn.epytor-vscode)
 [![VS Marketplace](https://img.shields.io/badge/VS%20Marketplace-epytor-blue?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=peiyucn.epytor-vscode)
 [![License](https://img.shields.io/github/license/peiyucn/epytor?style=for-the-badge)](https://github.com/peiyucn/epytor/blob/main/LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)]()
-[![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge\&logo=typescript\&logoColor=white)]()
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge\&logo=pnpm\&logoColor=white)]()
 
-[简体中文](README.zh-CN.md) | English | [GitHub](https://github.com/peiyucn/epytor)
+[Simplified Chinese](README.zh-CN.md) | English | [GitHub](https://github.com/peiyucn/epytor)
 
 A WYSIWYG Markdown editor for VS Code, powered by [Milkdown](https://milkdown.dev/). Edit `.md` / `.markdown` as rich text, saved as standard Markdown.
 
@@ -23,12 +23,12 @@ A WYSIWYG Markdown editor for VS Code, powered by [Milkdown](https://milkdown.de
 * **Rich text**: headings, bold, italic, strikethrough, inline code, blockquote, horizontal rule, lists
 * **LaTeX math**: inline `$...$` / block `$$...$$`, KaTeX rendering
 * **Tables**: GFM tables, insert/delete rows & columns, drag reorder, column alignment
-* **Code blocks**: CodeMirror 6 highlighting, language picker, copy, fullscreen
-* **Mermaid diagrams**: inline rendering, source/preview toggle
-* **Images**: paste/drag/picker insert, drag resize, caption, load retry
+* **Code blocks**: CodeMirror 6 highlighting, language picker, copy, smooth pure CSS fullscreen
+* **Mermaid diagrams 2.0**: modern HSL themes, smooth Bezier curves, interactive node path highlighting, 1-click HD PNG copy & SVG export
+* **Images & Cloud Storage**: paste/drag/picker insert, drag resize, caption, local deduplicated storage, custom server, or **Cloudflare R2 (S3 API zero-dependency direct upload)**
 * **TOC**: auto-generated, pinnable, click to navigate
 * **Path autocomplete**: `@/`, `./`, `../` triggers directory browsing
-* **Toolbars**: sticky top bar + floating selection toolbar
+* **Toolbars & Clean UI**: sticky top bar, floating selection toolbar, crisp vector SVG icons
 * **Auto save**: writes to disk 1s after editing stops
 
 ## Settings
@@ -41,8 +41,14 @@ A WYSIWYG Markdown editor for VS Code, powered by [Milkdown](https://milkdown.de
 | `epytor.editorMaxWidth` | `900` | Editor max width (px) |
 | `epytor.fontFamily` | `""` | Editor font family |
 | `epytor.codeBlockMaxHeight` | `600` | Code block max height (px) |
-| `epytor.imageStorage` | `"local"` | Image storage: `local` / `server` |
+| `epytor.imageStorage` | `"local"` | Image storage: `local` / `r2` / `server` |
 | `epytor.imageLocalPath` | `""` | Local image path |
+| `epytor.r2.accountId` | `""` | Cloudflare Account ID for R2 storage |
+| `epytor.r2.accessKeyId` | `""` | R2 S3 Access Key ID |
+| `epytor.r2.secretAccessKey` | `""` | R2 S3 Secret Access Key |
+| `epytor.r2.bucket` | `""` | R2 Bucket name |
+| `epytor.r2.publicDomain` | `""` | R2 Public Domain (e.g. `https://r2.2tocom.space` or `https://pub-xxx.r2.dev`) |
+| `epytor.r2.pathPrefix` | `"images/"` | Path prefix for uploaded images in R2 bucket |
 | `epytor.debugMode` | `false` | Debug mode |
 
 > See Settings UI for all options (`epytor.*`).

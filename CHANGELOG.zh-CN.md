@@ -3,6 +3,29 @@
 本项目的所有重要变更都将记录在此文件中。
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## [1.2.0] - 2026-08-16
+
+### 新增
+
+- **Cloudflare R2 图床存储**：支持 S3 REST API 协议与 AWS SigV4 零依赖直传，支持自定义公网访问域名与前缀目录。
+- **Mermaid 2.0 图表引擎**：
+  - 现代 HSL 动态主题，自适应 VS Code 亮色与暗色模式。
+  - 平滑贝塞尔曲线（`curve: 'basis'`）取代生硬折线。
+  - 智能交互流向高亮：鼠标悬停任意节点时，自动高亮连通路径并虚化无关节点。
+  - 工具栏一键**复制 2x 高清 PNG** 到剪贴板。
+  - 升级放大画布弹窗：支持导出高清 PNG 与 SVG 文件，支持 `+`、`-`、`0`、`Esc` 快捷键缩放平移。
+
+### 修复
+
+- **粘贴/拖放图片重复插入**：通过 `imagePastePlugin` 中间件与捕获阶段 `stopImmediatePropagation()`，彻底拦截 ProseMirror 默认插入 `blob:` 临时图片的行为。
+- **Callout 退格光标陷阱**：在 Callout 文本开头按 Backspace 可干净移除 `[!NOTE]` 标记，不再被困在 `font-size: 0` 隐藏区域。
+- **代码块全屏光标脱焦**：改用纯 CSS `.epytor-code-block-fullscreen` 全屏，不再移动 DOM 节点，完美保留 CodeMirror 焦点与光标。
+- **亮色主题暗色硬编码**：将视频插入弹窗、Mermaid 工具栏中的 `#111` 硬编码背景替换为 `--vscode-editorWidget-*` 变量。
+
+### 变更
+
+- **全矢量 SVG 图标**：全面替换 Slash 菜单、Callout 徽章、高亮调色板与弹窗中的 Emoji 为精致 SVG 矢量图标。
+
 ## [1.1.6] - 2026-08-06
 
 ### 新增

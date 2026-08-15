@@ -23,12 +23,12 @@
 * **富文本编辑**：标题、粗斜体、删除线、行内代码、引用、分割线、有序/无序/任务列表
 * **LaTeX 数学公式**：行内 `$...$` / 块级 `$$...$$`，KaTeX 渲染
 * **表格**：GFM 表格，插入/删除行、列，拖拽重排，列对齐
-* **代码块**：CodeMirror 6 语法高亮，语言选择，复制，全屏编辑
-* **Mermaid 图表**：内联渲染，源码/预览切换
-* **图片**：粘贴/拖放/选择器插入，拖拽缩放，Caption 编辑，加载重试
+* **代码块**：CodeMirror 6 语法高亮，语言选择，复制，纯 CSS 平滑全屏
+* **Mermaid 图表 2.0**：现代 HSL 配色主题，平滑贝塞尔曲线，节点悬停路径高亮，一键复制高清 PNG 与 SVG 导出
+* **图片与云图床**：粘贴/拖放/选择器插入，拖拽缩放，Caption 编辑，本地去重存储、自定义服务器，或 **Cloudflare R2（S3 API 零依赖直传）**
 * **目录面板**：自动生成，可固定，点击跳转
 * **路径补全**：`@/`、`./`、`../` 触发，分级浏览
-* **工具栏**：顶栏毛玻璃吸顶 + 选中浮动工具栏
+* **工具栏与清爽 UI**：顶栏毛玻璃吸顶 + 选中浮动工具栏 + 全矢量 SVG 图标
 * **自动保存**：停止编辑 1 秒后自动写盘
 
 ## 设置
@@ -41,8 +41,14 @@
 | `epytor.editorMaxWidth` | `900` | 编辑器最大宽度（px） |
 | `epytor.fontFamily` | `""` | 编辑器字体 |
 | `epytor.codeBlockMaxHeight` | `600` | 代码块最大高度（px） |
-| `epytor.imageStorage` | `"local"` | 图片存储：`local` / `server` |
+| `epytor.imageStorage` | `"local"` | 图片存储：`local` / `r2` / `server` |
 | `epytor.imageLocalPath` | `""` | 本地图片路径 |
+| `epytor.r2.accountId` | `""` | Cloudflare Account ID（账户 ID） |
+| `epytor.r2.accessKeyId` | `""` | R2 Access Key ID（S3 访问密钥 ID） |
+| `epytor.r2.secretAccessKey` | `""` | R2 Secret Access Key（S3 访问私钥） |
+| `epytor.r2.bucket` | `""` | R2 存储桶名称 |
+| `epytor.r2.publicDomain` | `""` | R2 公网访问域名（如 `https://r2.2tocom.space` 或 `https://pub-xxx.r2.dev`） |
+| `epytor.r2.pathPrefix` | `"images/"` | R2 存储桶图片前缀路径 |
 | `epytor.debugMode` | `false` | 调试模式 |
 
 > 完整设置列表见 VSCode 设置面板（`epytor.*`）

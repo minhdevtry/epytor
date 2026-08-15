@@ -1,52 +1,65 @@
-# Kế hoạch & Đặc tả Kỹ thuật: Cloudflare R2 Image Storage & Nâng cấp Mermaid Diagrams
+# Plan & Technical Spec: Cloudflare R2 Image Storage & Mermaid Diagrams Upgrade
 
-> **Tài liệu chuẩn bị cho Agent**: Tài liệu này chứa đầy đủ nghiên cứu chi tiết, phân tích mã nguồn hiện tại, thiết kế kiến trúc, mã nguồn mẫu và checklist từng bước. Agent tiếp theo có thể đọc file này và bắt tay vào triển khai ngay mà không cần khảo sát lại.
+> **Document prepared for Agents**: This document contains thorough research, current source code analysis, architectural design, sample source code, and step-by-step checklists. The next agent can read this file and start implementation immediately without re-investigation.
 
----
+***
 
-## 📑 Mục lục
-1. [Phần 1: Cloudflare R2 Image Storage Integration](#phần-1-cloudflare-r2-image-storage-integration)
-   - [1.1 Khảo sát hiện trạng codebase](#11-khảo-sát-hiện-trạng-codebase)
-   - [1.2 Thiết kế cấu hình (package.json)](#12-thiết-kế-cấu-hình-packagejson)
-   - [1.3 Thiết kế Module r2Service.ts (Zero-Dependency AWS4 Signer)](#13-thiết-kế-module-r2servicets-zero-dependency-aws4-signer)
-   - [1.4 Tích hợp vào ImageManagementService](#14-tích-hợp-vào-imagemanagementservice)
-   - [1.5 Chiến lược Unit Test](#15-chiến-lược-unit-test)
-2. [Phần 2: Nâng cấp Mermaid Diagrams (Visual & Rich Interactivity)](#phần-2-nâng-cấp-mermaid-diagrams-visual--rich-interactivity)
-   - [2.1 Khảo sát hiện trạng Mermaid trong codebase](#21-khảo-sát-hiện-trạng-mermaid-trong-codebase)
-   - [2.2 Modern Aesthetic Theme Engine & Curve Configuration](#22-modern-aesthetic-theme-engine--curve-configuration)
-   - [2.3 Công cụ xuất ảnh HD PNG (2x/4x) & Vector SVG](#23-công-cụ-xuất-ảnh-hd-png-2x4x--vector-svg)
-   - [2.4 Tương tác thông minh: Node Path Highlighting & Document Anchor Navigation](#24-tương-tác-thông-minh-node-path-highlighting--document-anchor-navigation)
-   - [2.5 Nâng cấp Toolbar & Modal Zoom/Pan](#25-nâng-cấp-toolbar--modal-zoompan)
-3. [Checklist triển khai từng bước (Execution Checklist)](#checklist-triển-khai-từng-bước-execution-checklist)
+## 📑 Table of Contents
 
----
+1. [Part 1: Cloudflare R2 Image Storage Integration](#part-1-cloudflare-r2-image-storage-integration)
 
-# Phần 1: Cloudflare R2 Image Storage Integration
+   * [1.1 Current Codebase Survey](#11-current-codebase-survey)
+   * [1.2 Configuration Design (package.json)](#12-configuration-design-packagejson)
+   * [1.3 Module Design r2Service.ts (Zero-Dependency AWS4 Signer)](#13-module-design-r2servicets-zero-dependency-aws4-signer)
+   * [1.4 Integration into ImageManagementService](#14-integration-into-imagemanagementservice)
+   * [1.5 Unit Test Strategy](#15-unit-test-strategy)
 
-## 1.1 Khảo sát hiện trạng codebase
+2. [Part 2: Mermaid Diagrams Upgrade (Visual & Rich Interactivity)](#part-2-mermaid-diagrams-upgrade-visual--rich-interactivity)
 
-### Luồng xử lý ảnh hiện tại:
-1. **WebView Trigger** ([webview/index.ts](file:///home/lucas/Documents/code/epytor/webview/index.ts) / [webview/components/imageView/index.ts](file:///home/lucas/Documents/code/epytor/webview/components/imageView/index.ts)):
-   - Người dùng Paste (`Ctrl+V`) hoặc Drag-and-drop ảnh → Gửi message `uploadImage` qua [webview/messaging.ts](file:///home/lucas/Documents/code/epytor/webview/messaging.ts) tới Extension Host:
+   * [2.1 Current Mermaid Survey in Codebase](#21-current-mermaid-survey-in-codebase)
+   * [2.2 Modern Aesthetic Theme Engine & Curve Configuration](#22-modern-aesthetic-theme-engine--curve-configuration)
+   * [2.3 HD PNG (2x/4x) & Vector SVG Export Tools](#23-hd-png-2x4x--vector-svg-export-tools)
+   * [2.4 Smart Interaction: Node Path Highlighting & Document Anchor Navigation](#24-smart-interaction-node-path-highlighting--document-anchor-navigation)
+   * [2.5 Toolbar & Modal Zoom/Pan Upgrade](#25-toolbar--modal-zoompan-upgrade)
+
+3. [Step-by-Step Execution Checklist](#step-by-step-execution-checklist)
+
+***
+
+# Part 1: Cloudflare R2 Image Storage Integration
+
+## 1.1 Current Codebase Survey
+
+### Current image handling flow:
+
+1. **WebView Trigger** ([webview/index.ts](webview/index.ts) / [webview/components/imageView/index.ts](webview/components/imageView/index.ts)):
+
+   * User Paste (`Ctrl+V`) or Drag-and-drop image → Send `uploadImage` message via [webview/messaging.ts](webview/messaging.ts) to the Extension Host:
+
      ```ts
      notifyUploadImage(data: Uint8Array, mimeType: string, altText: string): Promise<string>
      ```
-2. **Extension Host Dispatcher** ([src/MarkdownEditorProvider.ts](file:///home/lucas/Documents/code/epytor/src/MarkdownEditorProvider.ts#L302-L308)):
-   - Nhận `uploadImage` message và chuyển tới `ImageManagementService.handleImageUpload`.
-3. **Image Service Core** ([src/services/ImageManagementService.ts](file:///home/lucas/Documents/code/epytor/src/services/ImageManagementService.ts#L10-L37) & [src/utils/imageService.ts](file:///home/lucas/Documents/code/epytor/src/utils/imageService.ts)):
-   - Đọc cấu hình `const storage = cfg.get<string>('imageStorage', 'local')`.
-   - Nếu `storage === 'server'`: Gọi `uploadImageToServer` (HTTP POST multipart/form-data).
-   - Nếu `storage === 'local'`: Lưu file vào `./assets` hoặc `images/`, sinh URI `vscode-webview-resource://` và lưu mapping `uriMap`.
 
-### Đánh giá tính khả thi khi tích hợp R2:
-- **Cực kỳ dễ dàng và vừa vặn với kiến trúc**: Chỉ cần thêm nhánh `if (storage === 'r2')` trong `ImageManagementService.ts`, gọi module `uploadImageToR2(cfg, data, mimeType, altText)`.
-- **Không làm thay đổi cấu trúc Markdown**: URL trả về từ R2 là URL HTTPS công khai (vd: `https://pub-xxx.r2.dev/epytor/image.png` hoặc `https://cdn.domain.com/epytor/image.png`), WebView hiển thị trực tiếp và Markdown lưu trực tiếp link này mà không cần map URI nội bộ.
+2. **Extension Host Dispatcher** ([src/MarkdownEditorProvider.ts](src/MarkdownEditorProvider.ts) \~L302-L308):
 
----
+   * Receives the `uploadImage` message and forwards it to `ImageManagementService.handleImageUpload`.
 
-## 1.2 Thiết kế cấu hình (package.json)
+3. **Image Service Core** ([src/services/ImageManagementService.ts](src/services/ImageManagementService.ts) ~L10-L37 & [src/utils/imageService.ts](src/utils/imageService.ts)):
 
-Thêm các trường cấu hình sau vào `contributes.configuration.properties` trong [package.json](file:///home/lucas/Documents/code/epytor/package.json):
+   * Reads config `const storage = cfg.get<string>('imageStorage', 'local')`.
+   * If `storage === 'server'`: Calls `uploadImageToServer` (HTTP POST multipart/form-data).
+   * If `storage === 'local'`: Saves file to `./assets` or `images/`, generates a `vscode-webview-resource://` URI and stores the `uriMap` mapping.
+
+### R2 integration feasibility assessment:
+
+* **Trivially easy and a great fit for the architecture**: Only need to add an `if (storage === 'r2')` branch in `ImageManagementService.ts` that calls `uploadImageToR2(cfg, data, mimeType, altText)`.
+* **No Markdown structure changes needed**: The URL returned from R2 is a public HTTPS URL (e.g. `https://pub-xxx.r2.dev/epytor/image.png` or `https://cdn.domain.com/epytor/image.png`). The WebView renders it directly and Markdown stores the link directly without any internal URI mapping.
+
+***
+
+## 1.2 Configuration Design (package.json)
+
+Add the following configuration fields to `contributes.configuration.properties` in [package.json](package.json):
 
 ```json
 "epytor.imageStorage": {
@@ -99,16 +112,17 @@ Thêm các trường cấu hình sau vào `contributes.configuration.properties`
 }
 ```
 
-Bổ sung translation vào [package.nls.json](file:///home/lucas/Documents/code/epytor/package.nls.json) và [package.nls.zh-cn.json](file:///home/lucas/Documents/code/epytor/package.nls.zh-cn.json).
+Add translations to [package.nls.json](package.nls.json) and [package.nls.zh-cn.json](package.nls.zh-cn.json).
 
----
+***
 
-## 1.3 Thiết kế Module `r2Service.ts` (Zero-Dependency AWS4 Signer)
+## 1.3 Module Design `r2Service.ts` (Zero-Dependency AWS4 Signer)
 
-Tạo file mới: `src/utils/r2Service.ts`
-Chức năng: Ký request AWS Signature Version 4 chuẩn S3 REST API và upload trực tiếp lên Cloudflare R2 bằng HTTPS native.
+Create new file: `src/utils/r2Service.ts`
+Functionality: Sign standard S3 REST API AWS Signature Version 4 requests and upload directly to Cloudflare R2 via native HTTPS.
 
-### Thuật toán ký AWS4 (S3-compatible):
+### AWS4 signing algorithm (S3-compatible):
+
 ```ts
 import * as crypto from "crypto";
 import * as https from "https";
@@ -263,16 +277,16 @@ export async function uploadImageToR2(
 }
 ```
 
----
+***
 
-## 1.4 Tích hợp vào ImageManagementService
+## 1.4 Integration into ImageManagementService
 
-Trong [src/services/ImageManagementService.ts](file:///home/lucas/Documents/code/epytor/src/services/ImageManagementService.ts):
+In [src/services/ImageManagementService.ts](src/services/ImageManagementService.ts):
 
 ```ts
 import { uploadImageToR2 } from "../utils/r2Service";
 
-// Trong method handleImageUpload:
+// In the handleImageUpload method:
 const storage = cfg.get<string>('imageStorage', 'local');
 try {
     let url: string;
@@ -290,36 +304,39 @@ try {
 }
 ```
 
----
+***
 
-## 1.5 Chiến lược Unit Test
+## 1.5 Unit Test Strategy
 
-Tạo file `src/__tests__/r2Service.test.ts`:
-1. `getSignatureKey`: Kiểm tra chuỗi HMAC SHA256 tính toán đúng theo test vector của AWS SigV4.
-2. `uploadImageToR2`: Mock `https.request` xác nhận:
-   - Header `Authorization` có format đúng `AWS4-HMAC-SHA256 Credential=...`.
-   - Header `x-amz-content-sha256` trùng với hash của payload.
-   - Trả về public URL chính xác khi status code 200/204.
-   - Ném lỗi chi tiết khi HTTP 403 (Invalid credentials) hoặc HTTP 404 (Bucket not found).
+Create file `src/__tests__/r2Service.test.ts`:
 
----
+1. `getSignatureKey`: Verify the HMAC-SHA256 chain matches the AWS SigV4 test vectors.
 
-# Phần 2: Nâng cấp Mermaid Diagrams (Visual & Rich Interactivity)
+2. `uploadImageToR2`: Mock `https.request` and confirm:
 
-## 2.1 Khảo sát hiện trạng Mermaid trong codebase
+   * `Authorization` header format is `AWS4-HMAC-SHA256 Credential=...`.
+   * `x-amz-content-sha256` matches the payload hash.
+   * Returns the correct public URL when status code is 200/204.
+   * Throws detailed errors on HTTP 403 (Invalid credentials) or HTTP 404 (Bucket not found).
 
-- **Thư viện**: `mermaid` version `^11.16.1` trong [package.json](file:///home/lucas/Documents/code/epytor/package.json#L244).
-- **Vị trí khởi tạo**: [webview/editor.ts](file:///home/lucas/Documents/code/epytor/webview/editor.ts#L328-L403).
-- **Theme Bus**: [webview/utils/themeBus.ts](file:///home/lucas/Documents/code/epytor/webview/utils/themeBus.ts) lắng nghe đổi Dark/Light theme.
-- **Modal Popup**: [webview/ui/modals/mermaidZoomModal.ts](file:///home/lucas/Documents/code/epytor/webview/ui/modals/mermaidZoomModal.ts) (hỗ trợ kéo thả pan, zoom bằng con lăn, nút Copy Code).
+***
 
----
+# Part 2: Mermaid Diagrams Upgrade (Visual & Rich Interactivity)
+
+## 2.1 Current Mermaid Survey in Codebase
+
+* **Library**: `mermaid` version `^11.16.1` in [package.json](package.json) \~L244.
+* **Initialization site**: [webview/editor.ts](webview/editor.ts) \~L328-L403.
+* **Theme Bus**: [webview/utils/themeBus.ts](webview/utils/themeBus.ts) listens for Dark/Light theme changes.
+* **Modal Popup**: [webview/ui/modals/mermaidZoomModal.ts](webview/ui/modals/mermaidZoomModal.ts) (supports drag-to-pan, scroll-to-zoom, Copy Code button).
+
+***
 
 ## 2.2 Modern Aesthetic Theme Engine & Curve Configuration
 
-### Tạo module theme: `webview/utils/mermaidThemes.ts`
+### Create theme module: `webview/utils/mermaidThemes.ts`
 
-Mermaid v11 cung cấp `themeVariables` cực mạnh để tùy biến chi tiết từng thành phần:
+Mermaid v11 provides powerful `themeVariables` for detailed per-component customization:
 
 ```ts
 import type { MermaidConfig } from "mermaid";
@@ -331,7 +348,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
         fontFamily: "var(--vscode-editor-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
         theme: "base",
         themeVariables: isDark ? {
-            // Dark Mode Theme Variables (Hiện đại, tương phản sắc nét, màu sắc HSL cao cấp)
+            // Dark mode theme variables (modern, high-contrast, premium HSL palette)
             darkMode: true,
             background: "transparent",
             primaryColor: "#1e293b",
@@ -354,7 +371,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
             nodeBorder: "#3b82f6",
             mainBkg: "#1e293b",
         } : {
-            // Light Mode Theme Variables (Sạch sẽ, thanh thoát, màu pastel dịu mắt)
+            // Light mode theme variables (clean, neat, easy-on-the-eye pastel colors)
             darkMode: false,
             background: "transparent",
             primaryColor: "#f8fafc",
@@ -378,7 +395,7 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
             mainBkg: "#ffffff",
         },
         flowchart: {
-            curve: "basis", // Đường cong mượt Monotone / Basis thay vì đường gãy thô
+            curve: "basis", // Smooth Monotone / Basis curve, replacing the angular polyline
             htmlLabels: true,
             padding: 18,
             nodeSpacing: 50,
@@ -409,11 +426,11 @@ export function getMermaidConfig(isDark: boolean): MermaidConfig {
 }
 ```
 
----
+***
 
-## 2.3 Công cụ xuất ảnh HD PNG (2x/4x) & Vector SVG
+## 2.3 HD PNG (2x/4x) & Vector SVG Export Tools
 
-Tạo helper `webview/utils/mermaidExport.ts`:
+Create helper `webview/utils/mermaidExport.ts`:
 
 ```ts
 /**
@@ -456,11 +473,12 @@ export async function copyPngToClipboard(svgElement: SVGSVGElement): Promise<voi
 }
 ```
 
----
+***
 
-## 2.4 Tương tác thông minh: Node Path Highlighting & Document Anchor Navigation
+## 2.4 Smart Interaction: Node Path Highlighting & Document Anchor Navigation
 
-### CSS Animation & Highlight Rules ([webview/style.css](file:///home/lucas/Documents/code/epytor/webview/style.css)):
+### CSS animation & highlight rules ([webview/style.css](webview/style.css)):
+
 ```css
 /* Mermaid Interactive Nodes */
 .mermaid-rendered-svg .node {
@@ -488,45 +506,56 @@ export async function copyPngToClipboard(svgElement: SVGSVGElement): Promise<voi
 }
 ```
 
-### Event Delegation Logic trong [webview/editor.ts](file:///home/lucas/Documents/code/epytor/webview/editor.ts):
-- Khi hover vào một `.node[id]`:
-  - Tìm tất cả các edge có class liên kết tới ID đó.
-  - Thêm class `is-focused` vào node và các edge liên quan; thêm class `has-focus` vào wrapper.
-- Khi click vào `.node`:
-  - Lấy text bên trong node.
-  - Tìm Heading trong tài liệu có text tương đồng và cuộn mượt tới vị trí đó.
+### Event delegation logic in [webview/editor.ts](webview/editor.ts):
 
----
+* On hover over a `.node[id]`:
 
-## 2.5 Nâng cấp Toolbar & Modal Zoom/Pan
+  * Find all edges whose class links to that ID.
+  * Add the `is-focused` class to the node and related edges; add the `has-focus` class to the wrapper.
 
-1. **Toolbar trên khối Mermaid**:
-   - `[🔍 Phóng to]` (Mở Modal Canvas)
-   - `[📋 Copy PNG]` (Xuất ảnh PNG 2x nét căng vào clipboard)
-   - `[📋 Copy Code]` (Copy mã nguồn Mermaid)
-2. **Modal Zoom Canvas** ([webview/ui/modals/mermaidZoomModal.ts](file:///home/lucas/Documents/code/epytor/webview/ui/modals/mermaidZoomModal.ts)):
-   - Bổ sung nút **Export HD PNG** và **Export SVG**.
-   - Hỗ trợ phím tắt `+`, `-`, `0` (Reset), `F` (Fit screen), `Esc` (Close).
+* On click of a `.node`:
 
----
+  * Read the text inside the node.
+  * Find a Heading in the document with similar text and smoothly scroll to its position.
 
-# Checklist triển khai từng bước (Execution Checklist)
+***
 
-Mỗi nhiệm vụ dưới đây là một đầu việc độc lập, tuân thủ nghiêm ngặt quy tắc commit trong [AGENTS.md](file:///home/lucas/Documents/code/epytor/AGENTS.md):
+## 2.5 Toolbar & Modal Zoom/Pan Upgrade
 
-### 🎯 Nhóm 1: Cloudflare R2 Image Upload
-- [ ] **Task 1.1**: Khai báo cấu hình `epytor.imageStorage: 'r2'` và `epytor.r2.*` trong `package.json`, `package.nls.json`, `package.nls.zh-cn.json`.
-- [ ] **Task 1.2**: Viết `src/utils/r2Service.ts` với hàm ký AWS SigV4 REST PUT upload.
-- [ ] **Task 1.3**: Viết Unit Test `src/__tests__/r2Service.test.ts` (test coverage ≥ 90%).
-- [ ] **Task 1.4**: Cập nhật `src/services/ImageManagementService.ts` tích hợp gọi `uploadImageToR2`.
-- [ ] **Task 1.5**: Chạy `pnpm build && pnpm test` xác nhận pass toàn bộ test suite.
-- [ ] **Task 1.6**: Git commit: `feat: add Cloudflare R2 image hosting and S3 signed direct upload support`.
+1. **Toolbar on the Mermaid block**:
 
-### 🎯 Nhóm 2: Nâng cấp Mermaid Diagrams
-- [ ] **Task 2.1**: Tạo `webview/utils/mermaidThemes.ts` với cấu hình theme hiện đại, HSL palette và đường cong Bezier `curve: basis`.
-- [ ] **Task 2.2**: Tạo `webview/utils/mermaidExport.ts` hỗ trợ xuất HD PNG 2x/4x và Copy PNG vào Clipboard.
-- [ ] **Task 2.3**: Nâng cấp thanh công cụ khối Mermaid trong `webview/editor.ts` (thêm nút Copy PNG, Zoom, Copy Code dùng vector SVG icon).
-- [ ] **Task 2.4**: Bổ sung tương tác hover focus path và click-to-anchor trong `webview/editor.ts` và `webview/style.css`.
-- [ ] **Task 2.5**: Nâng cấp `webview/ui/modals/mermaidZoomModal.ts` hỗ trợ Export PNG/SVG và phím tắt canvas.
-- [ ] **Task 2.6**: Chạy `pnpm build && pnpm test` xác nhận pass toàn bộ.
-- [ ] **Task 2.7**: Git commit: `feat: upgrade Mermaid visual themes, smooth curves, interactive highlight, and HD PNG export`.
+   * `[🔍 Zoom]` (open the modal canvas)
+   * `[📋 Copy PNG]` (export 2x crisp PNG to the clipboard)
+   * `[📋 Copy Code]` (copy the Mermaid source)
+
+2. **Modal zoom canvas** ([webview/ui/modals/mermaidZoomModal.ts](webview/ui/modals/mermaidZoomModal.ts)):
+
+   * Add **Export HD PNG** and **Export SVG** buttons.
+   * Support the keyboard shortcuts `+`, `-`, `0` (Reset), `F` (Fit screen), `Esc` (Close).
+
+***
+
+# Step-by-Step Execution Checklist
+
+Each task below is an independent unit of work, strictly following the commit convention in [AGENTS.md](AGENTS.md):
+
+### 🎯 Group 1: Cloudflare R2 Image Upload
+
+* [ ] **Task 1.1**: Declare the `epytor.imageStorage: 'r2'` and `epytor.r2.*` settings in `package.json`, `package.nls.json`, `package.nls.zh-cn.json`.
+* [ ] **Task 1.2**: Write `src/utils/r2Service.ts` with the AWS SigV4 REST PUT upload signing function.
+* [ ] **Task 1.3**: Write unit tests in `src/__tests__/r2Service.test.ts` (test coverage ≥ 90%).
+* [ ] **Task 1.4**: Update `src/services/ImageManagementService.ts` to integrate the `uploadImageToR2` call.
+* [ ] **Task 1.5**: Run `pnpm build && pnpm test` to confirm the full test suite passes.
+* [ ] **Task 1.6**: Git commit: `feat: add Cloudflare R2 image hosting and S3 signed direct upload support`.
+
+### 🎯 Group 2: Mermaid Diagrams Upgrade
+
+* [ ] **Task 2.1**: Create `webview/utils/mermaidThemes.ts` with the modern theme configuration, HSL palette and Bezier curve `curve: basis`.
+* [ ] **Task 2.2**: Create `webview/utils/mermaidExport.ts` supporting HD PNG 2x/4x export and Copy PNG to clipboard.
+* [ ] **Task 2.3**: Upgrade the Mermaid block toolbar in `webview/editor.ts` (add Copy PNG, Zoom, Copy Code buttons using vector SVG icons).
+* [ ] **Task 2.4**: Add hover focus path and click-to-anchor interaction in `webview/editor.ts` and `webview/style.css`.
+* [ ] **Task 2.5**: Upgrade `webview/ui/modals/mermaidZoomModal.ts` to support PNG/SVG export and canvas keyboard shortcuts.
+* [ ] **Task 2.6**: Run `pnpm build && pnpm test` to confirm the full test suite passes.
+* [ ] **Task 2.7**: Git commit: `feat: upgrade Mermaid visual themes, smooth curves, interactive highlight, and HD PNG export`.
+
+![](https://r2.2tocom.space/images/image_msuobbm2_8zz3.png)

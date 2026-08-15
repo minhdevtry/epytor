@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-08-16
+
+### Added
+
+- **Cloudflare R2 Image Storage**: S3-compatible AWS SigV4 zero-dependency direct upload with custom public domain and bucket path prefix support.
+- **Mermaid 2.0**:
+  - Modern HSL theme palette dynamically adapting to VS Code light and dark themes.
+  - Smooth Bezier curves (`curve: 'basis'`) replacing sharp polyline diagram edges.
+  - Interactive Flow Focus: Hovering over any diagram node dynamically highlights the entire connecting path and dims unrelated nodes.
+  - One-click **HD PNG (2x)** direct clipboard copy on the diagram toolbar.
+  - Upgraded Zoom Modal with HD PNG download, SVG download, and canvas keyboard shortcuts (`+`, `-`, `0`, `Esc`).
+
+### Fixed
+
+- **Duplicate image insertion on paste/drop**: Prevented ProseMirror default `blob:` URL insertion by adding `imagePastePlugin` and capturing phase event interception with `stopImmediatePropagation()`.
+- **Callout Backspace trap**: Hitting Backspace at the start of Callout text cleanly removes the `[!NOTE]` tag without trapping the cursor in `font-size: 0`.
+- **Codeblock Fullscreen desynchronization**: Replaced DOM reparenting with smooth pure CSS `.epytor-code-block-fullscreen` toggle, preserving CodeMirror cursor state.
+- **Light Theme Contrast & Dark Hardcoding**: Replaced hardcoded `#111` backgrounds in Video Prompts and Mermaid toolbars with `--vscode-editorWidget-*` variables.
+
+### Changed
+
+- **Vector SVG Icons**: Replaced all emojis in Slash menu, Callout badges, Highlight picker, and dialogs with crisp vector SVG icons.
+
 ## [1.1.6] - 2026-08-06
 
 ### Added
