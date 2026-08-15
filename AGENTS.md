@@ -310,3 +310,4 @@ The following limitations come from upstream dependencies such as Milkdown / Cre
 * When upgrading dependencies, verify each item in this table; remove resolved entries and write them under Fixed in the CHANGELOG
 * Prefer filing issues in the corresponding upstream repo and put the link in the "Tracking" column
 * **When filing an upstream issue, follow the other side's template spec**: title should have a `[Bug]` or `[Feature]` prefix; body should be structured (repro steps / expected / actual / environment). If the other side uses `.yml` Issue Forms, the `gh issue create` CLI cannot trigger template validation, so manually align with the fields required by the template
+

@@ -3,144 +3,152 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.2.0] - 2026-08-16
+## \[1.2.0] - 2026-08-16
 
 ### Added
 
-- **Cloudflare R2 Image Storage**: S3-compatible AWS SigV4 zero-dependency direct upload with custom public domain and bucket path prefix support.
-- **Sticky Heading Title & Section Folding**: Glassmorphic sticky banner showing the active section while scrolling, with one-click return to section top; interactive fold/unfold button next to headings to collapse section bodies without altering document content.
-- **Table Wrap Mode (`epytor.tableWrapMode`)**: Configure whether table cells wrap text (`"wrap"`) or keep single lines with horizontal scrolling (`"nowrap"`), with `Shift+Enter` soft line breaks inside cells.
-- **Text Alignment (Left / Center / Right / Justify)**: Block-level alignment tools with live visual rendering in both TopBar and floating Selection Toolbar.
-- **Mermaid 2.0**:
-  - Modern HSL theme palette dynamically adapting to VS Code light and dark themes.
-  - Smooth Bezier curves (`curve: 'basis'`) replacing sharp polyline diagram edges.
-  - Interactive Flow Focus: Hovering over any diagram node dynamically highlights the entire connecting path and dims unrelated nodes.
-  - One-click **HD PNG (2x)** direct clipboard copy on the diagram toolbar.
-  - Upgraded Zoom Modal with HD PNG download, SVG download, and canvas keyboard shortcuts (`+`, `-`, `0`, `Esc`).
+* **Cloudflare R2 Image Storage**: S3-compatible AWS SigV4 zero-dependency direct upload with custom public domain and bucket path prefix support.
+
+* **Sticky Heading Title & Section Folding**: Glassmorphic sticky banner showing the active section while scrolling, with one-click return to section top; interactive fold/unfold button next to headings to collapse section bodies without altering document content.
+
+* **Table Wrap Mode (`epytor.tableWrapMode`)**: Configure whether table cells wrap text (`"wrap"`) or keep single lines with horizontal scrolling (`"nowrap"`), with `Shift+Enter` soft line breaks inside cells.
+
+* **Text Alignment (Left / Center / Right / Justify)**: Block-level alignment tools with live visual rendering in both TopBar and floating Selection Toolbar.
+
+* **Mermaid 2.0**:
+
+  * Modern HSL theme palette dynamically adapting to VS Code light and dark themes.
+  * Smooth Bezier curves (`curve: 'basis'`) replacing sharp polyline diagram edges.
+  * Interactive Flow Focus: Hovering over any diagram node dynamically highlights the entire connecting path and dims unrelated nodes.
+  * One-click **HD PNG (2x)** direct clipboard copy on the diagram toolbar.
+  * Upgraded Zoom Modal with HD PNG download, SVG download, and canvas keyboard shortcuts (`+`, `-`, `0`, `Esc`).
 
 ### Fixed
 
-- **Duplicate image insertion on paste/drop**: Prevented ProseMirror default `blob:` URL insertion by adding `imagePastePlugin` and capturing phase event interception with `stopImmediatePropagation()`.
-- **Callout Backspace trap**: Hitting Backspace at the start of Callout text cleanly removes the `[!NOTE]` tag without trapping the cursor in `font-size: 0`.
-- **Codeblock Fullscreen desynchronization**: Replaced DOM reparenting with smooth pure CSS `.epytor-code-block-fullscreen` toggle, preserving CodeMirror cursor state.
-- **Light Theme Contrast & Dark Hardcoding**: Replaced hardcoded `#111` backgrounds in Video Prompts and Mermaid toolbars with `--vscode-editorWidget-*` variables.
+* **Duplicate image insertion on paste/drop**: Prevented ProseMirror default `blob:` URL insertion by adding `imagePastePlugin` and capturing phase event interception with `stopImmediatePropagation()`.
+* **Callout Backspace trap**: Hitting Backspace at the start of Callout text cleanly removes the `[!NOTE]` tag without trapping the cursor in `font-size: 0`.
+* **Codeblock Fullscreen desynchronization**: Replaced DOM reparenting with smooth pure CSS `.epytor-code-block-fullscreen` toggle, preserving CodeMirror cursor state.
+* **Light Theme Contrast & Dark Hardcoding**: Replaced hardcoded `#111` backgrounds in Video Prompts and Mermaid toolbars with `--vscode-editorWidget-*` variables.
 
 ### Changed
 
-- **Vector SVG Icons**: Replaced all emojis in Slash menu, Callout badges, Highlight picker, and dialogs with crisp vector SVG icons.
+* **Vector SVG Icons**: Replaced all emojis in Slash menu, Callout badges, Highlight picker, and dialogs with crisp vector SVG icons.
 
-## [1.1.6] - 2026-08-06
+## \[1.1.6] - 2026-08-06
 
 ### Added
 
-- **List switching**: bullet/ordered/task buttons now switch between each other in-place (ordered numbering reflows); clicking the current type lifts back to paragraph
+* **List switching**: bullet/ordered/task buttons now switch between each other in-place (ordered numbering reflows); clicking the current type lifts back to paragraph
 
 ### Fixed
 
-- **List/blockquote buttons broken after Milkdown 7.22.0**: multiple `prosemirror-model` versions coexisted in the dependency tree (1.25.4 / 1.25.9 / 1.25.11), breaking `tr.wrap` → pinned all prosemirror packages to a single version chain via `pnpm-workspace.yaml` overrides
-- **Virtual cursor invisible inside blockquote/inline code**: cursor rendered by `prosemirror-virtual-cursor` lacked z-index, hidden behind node backgrounds
-- **List wrap button no-op**: `wrapInBlockTypeCommand` import was missing in the toggle handler
-- **List switch moved the cursor to a new line**: switching now uses `setNodeMarkup` (node size unchanged) instead of rebuilding the list node
+* **List/blockquote buttons broken after Milkdown 7.22.0**: multiple `prosemirror-model` versions coexisted in the dependency tree (1.25.4 / 1.25.9 / 1.25.11), breaking `tr.wrap` → pinned all prosemirror packages to a single version chain via `pnpm-workspace.yaml` overrides
+* **Virtual cursor invisible inside blockquote/inline code**: cursor rendered by `prosemirror-virtual-cursor` lacked z-index, hidden behind node backgrounds
+* **List wrap button no-op**: `wrapInBlockTypeCommand` import was missing in the toggle handler
+* **List switch moved the cursor to a new line**: switching now uses `setNodeMarkup` (node size unchanged) instead of rebuilding the list node
 
 ### Changed
 
-- **Packaging**: `.vscodeignore` excludes `pnpm-workspace.yaml`, `coverage/`, `scripts/`
+* **Packaging**: `.vscodeignore` excludes `pnpm-workspace.yaml`, `coverage/`, `scripts/`
 
-## [1.1.5] - 2026-08-05
+## \[1.1.5] - 2026-08-05
 
 ### Changed
 
-- **Extension icon**: new logo
-- **Dependencies**: upgraded to fix security vulnerabilities
-  - Milkdown 7.21.3 → 7.22.0, Mermaid 11.15.0 → 11.16.1
-  - vsce 2.32 → 3.9.2, Vitest 2 → 4, Vite 5 → 6, esbuild 0.24 → 0.28
-- **Test config**: migrated `vitest.workspace.ts` to `projects` (Vitest 4)
+* **Extension icon**: new logo
+
+* **Dependencies**: upgraded to fix security vulnerabilities
+
+  * Milkdown 7.21.3 → 7.22.0, Mermaid 11.15.0 → 11.16.1
+  * vsce 2.32 → 3.9.2, Vitest 2 → 4, Vite 5 → 6, esbuild 0.24 → 0.28
+
+* **Test config**: migrated `vitest.workspace.ts` to `projects` (Vitest 4)
 
 ### Fixed
 
-- **Top bar heading dropdown clipped**: overflow clipping removed
-- **Fullscreen code language XSS**: language name now safely injected via textContent
+* **Top bar heading dropdown clipped**: overflow clipping removed
+* **Fullscreen code language XSS**: language name now safely injected via textContent
 
-## [1.1.4] - 2026-08-05
-
-### Changed
-
-- **Extension icon**: new logo
-
-## [1.1.3] - 2026-07-16
+## \[1.1.4] - 2026-08-05
 
 ### Changed
 
-- **Milkdown**: 7.21.2 → 7.21.3
+* **Extension icon**: new logo
+
+## \[1.1.3] - 2026-07-16
+
+### Changed
+
+* **Milkdown**: 7.21.2 → 7.21.3
 
 ### Fixed
 
-- **Virtual cursor invisible inside inline code on light themes**: removed `mix-blend-mode: difference`, use direct foreground color
+* **Virtual cursor invisible inside inline code on light themes**: removed `mix-blend-mode: difference`, use direct foreground color
 
 ### Added
 
-- **TOC leaf nodes**: headings without children now show `–` for visual consistency
+* **TOC leaf nodes**: headings without children now show `–` for visual consistency
 
-## [1.1.2] - 2026-07-15
-
-### Fixed
-
-- **Virtual cursor not visible on some VSCode themes**: fallback CSS variable chain `--vscode-editorCursor-foreground` → `--vscode-editor-foreground` → `#fff` prevents transparent cursor on themes missing cursor color variable.
-
-## [1.1.1] - 2026-07-14
+## \[1.1.2] - 2026-07-15
 
 ### Fixed
 
-- **Cursor Feature enabled**: `prosemirror-virtual-cursor` provides mark boundary cursor indicator with arrow key navigation across inline style boundaries.
+* **Virtual cursor not visible on some VSCode themes**: fallback CSS variable chain `--vscode-editorCursor-foreground` → `--vscode-editor-foreground` → `#fff` prevents transparent cursor on themes missing cursor color variable.
+
+## \[1.1.1] - 2026-07-14
+
+### Fixed
+
+* **Cursor Feature enabled**: `prosemirror-virtual-cursor` provides mark boundary cursor indicator with arrow key navigation across inline style boundaries.
 
 ### Known Limitations
 
-- **Inline styles cannot exit at paragraph end**: Milkdown does not handle empty selection for inline marks. Inline styles (bold, italic, strikethrough, inline code, etc.) at paragraph end cannot exit to normal text input. [Milkdown#2413](https://github.com/Milkdown/milkdown/issues/2413), awaiting upstream fix.
+* **Inline styles cannot exit at paragraph end**: Milkdown does not handle empty selection for inline marks. Inline styles (bold, italic, strikethrough, inline code, etc.) at paragraph end cannot exit to normal text input. [Milkdown#2413](https://github.com/Milkdown/milkdown/issues/2413), awaiting upstream fix.
 
-## [1.1.0] - 2026-07-08
+## \[1.1.0] - 2026-07-08
 
 ### Architecture
 
-- **Milkdown**: 7.5.x → 7.21.2, `Editor.make()` → `CrepeBuilder`
-- **Syntax Highlighting**: Prism → CodeMirror 6 (highlighting, search/replace, fullscreen)
-- **Package size**: 8 MB → 3.1 MB (production build + code cleanup)
+* **Milkdown**: 7.5.x → 7.21.2, `Editor.make()` → `CrepeBuilder`
+* **Syntax Highlighting**: Prism → CodeMirror 6 (highlighting, search/replace, fullscreen)
+* **Package size**: 8 MB → 3.1 MB (production build + code cleanup)
 
 ### Added
 
-- **LaTeX math**: inline `$...$` / block `$$...$$`, KaTeX rendering
-- **Code block enhancements**: preview toggle, copy feedback, fullscreen, light/dark theme
-- **Image features**: drag resize, caption editing, picker (upload/library/URL), auto-retry on load failure
-- **Toolbar**: backdrop blur, brand badge "EPYTOR🦖", clear formatting, settings button
-- **TOC panel**: aligned below toolbar, backdrop blur, pinnable/resizable/collapsible, scrollbar
-- **Mermaid**: unified light/dark theme, case-insensitive
-- **Editor top margin**: 52px breathing room
+* **LaTeX math**: inline `$...$` / block `$$...$$`, KaTeX rendering
+* **Code block enhancements**: preview toggle, copy feedback, fullscreen, light/dark theme
+* **Image features**: drag resize, caption editing, picker (upload/library/URL), auto-retry on load failure
+* **Toolbar**: backdrop blur, brand badge "EPYTOR🦖", clear formatting, settings button
+* **TOC panel**: aligned below toolbar, backdrop blur, pinnable/resizable/collapsible, scrollbar
+* **Mermaid**: unified light/dark theme, case-insensitive
+* **Editor top margin**: 52px breathing room
 
 ### Fixes
 
-- Code block language picker freeze
-- Mermaid uppercase "Mermaid" not rendering preview
-- Heading dropdown width misalignment
-- Link clicks navigating within WebView
-- Link tooltip not closing on scroll
-- Image caption not syncing alt attribute after editing
-- Toolbar button icons oversized
-- Editor content covered by top bar
-- Selection floating toolbar covered by top bar
-- Clear formatting not removing links / partial removal causing split links
-- TOC click positioning inaccurate (inline formatting offset)
-- Source/render toggle line positioning inaccurate (proportional interpolation fix)
-- Narrow window toolbar not wrapping, overlapping brand badge
-- TOC panel appearing before toolbar on initial load
+* Code block language picker freeze
+* Mermaid uppercase "Mermaid" not rendering preview
+* Heading dropdown width misalignment
+* Link clicks navigating within WebView
+* Link tooltip not closing on scroll
+* Image caption not syncing alt attribute after editing
+* Toolbar button icons oversized
+* Editor content covered by top bar
+* Selection floating toolbar covered by top bar
+* Clear formatting not removing links / partial removal causing split links
+* TOC click positioning inaccurate (inline formatting offset)
+* Source/render toggle line positioning inaccurate (proportional interpolation fix)
+* Narrow window toolbar not wrapping, overlapping brand badge
+* TOC panel appearing before toolbar on initial load
 
 ### Changed
 
-- **Blockquote**: no longer nests — toggles instead (click inside to exit, outside to enter)
-- **Table**: single-click row/col selection temporarily disabled (Crepe upstream instability — click goes to edit mode)
-- **Send to Claude**: permanently removed
+* **Blockquote**: no longer nests — toggles instead (click inside to exit, outside to enter)
+* **Table**: single-click row/col selection temporarily disabled (Crepe upstream instability — click goes to edit mode)
+* **Send to Claude**: permanently removed
 
 ### Known Limitations
 
-- Ordered list multi-level numbering: decimal only (no a.b.c. / i.ii.iii.) — Milkdown kernel limitation
+* Ordered list multi-level numbering: decimal only (no a.b.c. / i.ii.iii.) — Milkdown kernel limitation
 
 ## \[1.0.1] - 2026-06-16
 
