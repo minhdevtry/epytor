@@ -62,33 +62,22 @@ export function setLogTableSel(enabled: boolean): void {
     logTableSel = enabled;
 }
 
-// 只保留常用语言（143 → ~40）
-const WANTED_LANGS = new Set([
-    "bash", "sh", "c", "cpp", "c++", "csharp", "c#", "css", "go", "html",
-    "java", "javascript", "js", "json", "kotlin", "latex", "less", "lua",
-    "markdown", "md", "mermaid", "php", "python", "py", "ruby", "rust",
-    "sass", "scss", "sql", "swift", "toml", "typescript", "ts", "xml", "yaml", "yml",
-]);
-const codeLanguages = allCodeLanguages.filter(
-    (l) => l.alias.some((a) => WANTED_LANGS.has(a))
-);
-// Mermaid 不在 @codemirror/language-data 中，手动添加
-codeLanguages.unshift(
+// 完整语言库，支持所有主流编程语言的高亮
+const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Text",
         alias: ["text", "plaintext", "txt"],
         extensions: ["txt"],
         load: async () => undefined as unknown as LanguageSupport,
-    })
-);
-codeLanguages.push(
+    }),
+    ...allCodeLanguages,
     LanguageDescription.of({
         name: "Mermaid",
         alias: ["mermaid"],
         extensions: ["mmd"],
         load: async () => undefined as unknown as LanguageSupport,
-    })
-);
+    }),
+];
 
 // ─── 比较规范化辅助函数 ─────────────────────────────────────────────────────
 const SEP_ROW_RE = /^\|[\s\-:|]+\|$/;
