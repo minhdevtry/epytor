@@ -930,7 +930,12 @@ onMessage(async (msg) => {
             // Already bootstrapped directly from injected DOM data
             return;
         }
-        if (msg.type === "revert" && currentEditor && msg.content === markdownSource) {
+        if (
+            msg.type === "revert" &&
+            currentEditor &&
+            (msg.content === markdownSource ||
+                msg.content.replace(/\r\n/g, "\n") === markdownSource.replace(/\r\n/g, "\n"))
+        ) {
             // Revert content is identical to what webview already has, preserve editor instance & undo history
             return;
         }

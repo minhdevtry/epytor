@@ -293,7 +293,6 @@ export class MarkdownEditorProvider
                             const newContent = this._prepareContentForSave(message.content, uriKey);
                             if (newContent === document.getText()) { break; }
                             document.update(newContent);
-                            DocumentSyncService.recordSavedContent(uriKey, newContent);
                             if (!this._pinnedDocuments.has(uriKey)) {
                                 this._pinnedDocuments.add(uriKey);
                                 vscode.commands.executeCommand('workbench.action.keepEditor');
@@ -520,7 +519,6 @@ export class MarkdownEditorProvider
             clearTimeout(timer);
             this._autoSaveTimers.delete(uriKey);
         }
-        DocumentSyncService.recordSavedContent(uriKey, document.getText());
         await document.save(cancellation);
         DocumentSyncService.recordSavedContent(uriKey, document.getText());
         const panel = this._webviewPanels.get(uriKey);
