@@ -14,7 +14,7 @@ import {
 import { listener } from "@milkdown/kit/plugin/listener";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { undo, redo } from "@milkdown/kit/prose/history";
-import type { EditorState } from "@milkdown/kit/prose/state";
+import { TextSelection, type EditorState } from "@milkdown/kit/prose/state";
 import { liftListItem } from "@milkdown/kit/prose/schema-list";
 import { lift, wrapIn } from "prosemirror-commands";
 import type { Ctx } from "@milkdown/kit/ctx";
@@ -403,19 +403,24 @@ export async function createEditor(
                             const bq = view.state.schema.nodes.blockquote;
                             const p = view.state.schema.nodes.paragraph;
                             if (!bq || !p) return;
-                            const text = view.state.schema.text(`[!${tag}] `);
-                            const calloutNode = bq.create(null, p.create(null, text));
+                            const tagPara = p.create(null, view.state.schema.text(`[!${tag}]`));
+                            const contentPara = p.create(null);
+                            const calloutNode = bq.create(null, [tagPara, contentPara]);
                             const tr = view.state.tr.replaceSelectionWith(calloutNode);
+                            const targetPos = Math.min(tr.mapping.map(view.state.selection.from) + tagPara.nodeSize + 1, tr.doc.content.size);
+                            tr.setSelection(TextSelection.near(tr.doc.resolve(targetPos)));
                             view.dispatch(tr);
+                            view.focus();
                         },
                     });
                 };
 
-                addCallout('callout-note', 'Note / Info', 'NOTE', 'ℹ️');
-                addCallout('callout-tip', 'Tip', 'TIP', '💡');
-                addCallout('callout-warning', 'Warning', 'WARNING', '⚠️');
-                addCallout('callout-caution', 'Danger / Caution', 'CAUTION', '🛑');
-                addCallout('callout-success', 'Success', 'SUCCESS', '✅');
+                addCallout('caution', 'Caution / Danger', 'CAUTION', '🛑');
+                addCallout('note', 'Note / Info', 'NOTE', 'ℹ️');
+                addCallout('tip', 'Tip', 'TIP', '💡');
+                addCallout('warning', 'Warning', 'WARNING', '⚠️');
+                addCallout('success', 'Success', 'SUCCESS', '✅');
+                addCallout('important', 'Important', 'IMPORTANT', '📌');
 
                 // Media & Embeds Group
                 const mediaGroup = builder.addGroup('media', 'Media & Embeds');
@@ -453,6 +458,23 @@ export async function createEditor(
                 mediaGroup.addItem('highlight-text', {
                     label: 'Highlight Text',
                     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 2-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 0"/><path d="m18 6 3 3"/></svg>`,
+                    onRun: (ctx) => {
+                        showHighlightColorPalette(null, ctx);
+                    },
+                });
+            },
+        })
+        .addFeature(toolbar, {
+            boldLabel: t('Bold'),
+            italicLabel: t('Italic'),
+            strikethroughLabel: t('Strikethrough'),
+            codeLabel: t('Inline code'),
+            linkLabel: t('Link'),
+            buildToolbar: (builder) => {
+                builder.getGroup('formatting').addItem('highlight-color', {
+                    icon: TbHighlighter,
+                    label: 'Highlight',
+                    active: () => false,
                     onRun: (ctx) => {
                         showHighlightColorPalette(null, ctx);
                     },

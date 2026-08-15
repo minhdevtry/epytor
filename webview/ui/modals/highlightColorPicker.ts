@@ -42,10 +42,23 @@ export function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx
 
     document.body.appendChild(popover);
 
-    if (anchorEl) {
+    const view = ctx.get(editorViewCtx);
+    const { from, to } = view.state.selection;
+
+    if (anchorEl && anchorEl.getBoundingClientRect().width > 0) {
         const rect = anchorEl.getBoundingClientRect();
         popover.style.top = `${rect.bottom + 6}px`;
         popover.style.left = `${Math.max(10, Math.min(window.innerWidth - 240, rect.left - 40))}px`;
+    } else if (from !== to) {
+        try {
+            const coords = view.coordsAtPos(from);
+            popover.style.top = `${coords.bottom + 8}px`;
+            popover.style.left = `${Math.max(10, Math.min(window.innerWidth - 240, coords.left - 20))}px`;
+        } catch {
+            popover.style.top = `60px`;
+            popover.style.left = `50%`;
+            popover.style.transform = `translateX(-50%)`;
+        }
     } else {
         popover.style.top = `60px`;
         popover.style.left = `50%`;
@@ -59,24 +72,24 @@ export function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx
     };
 
     const apply = (color: string | null) => {
-        const view = ctx.get(editorViewCtx);
-        const { state } = view;
-        const { from, to, empty } = state.selection;
+        const v = ctx.get(editorViewCtx);
+        const { state } = v;
+        const sel = state.selection;
 
-        if (empty) {
+        if (sel.empty) {
             if (color) {
                 const text = `<mark style="background-color: ${color};">highlight</mark>`;
-                const tr = state.tr.insertText(text, from, to);
-                view.dispatch(tr);
+                const tr = state.tr.insertText(text, sel.from, sel.to);
+                v.dispatch(tr);
             }
         } else {
-            const rawText = state.doc.textBetween(from, to);
+            const rawText = state.doc.textBetween(sel.from, sel.to);
             const cleaned = rawText.replace(/<mark(?:\s+[^>]*)?>|<\/mark>/gi, "");
             const replacement = color ? `<mark style="background-color: ${color};">${cleaned}</mark>` : cleaned;
-            const tr = state.tr.insertText(replacement, from, to);
-            view.dispatch(tr);
+            const tr = state.tr.insertText(replacement, sel.from, sel.to);
+            v.dispatch(tr);
         }
-        view.focus();
+        v.focus();
         close();
     };
 
