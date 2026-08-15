@@ -1,0 +1,89 @@
+diff --git a/lib/esm/feature/block-edit/index.js b/lib/esm/feature/block-edit/index.js
+index e10bae88c03d017f3dfd533c71ed388018e39669..55d275c1c76dbea1ab39aedfe7bec3762dcfd178 100644
+--- a/lib/esm/feature/block-edit/index.js
++++ b/lib/esm/feature/block-edit/index.js
+@@ -733,16 +733,51 @@ function getGroups(filter, config, ctx) {
+   }
+   (_kb = config == null ? void 0 : config.buildMenu) == null ? void 0 : _kb.call(config, groupBuilder);
+   let groups = groupBuilder.build();
++  const ALIAS_MAP = {
++    'h1': ['h1', 'heading 1', 'header 1', 'tieude 1', '#'],
++    'h2': ['h2', 'heading 2', 'header 2', 'tieude 2', '##'],
++    'h3': ['h3', 'heading 3', 'header 3', 'tieude 3', '###'],
++    'h4': ['h4', 'heading 4', 'header 4', 'tieude 4', '####'],
++    'h5': ['h5', 'heading 5', 'header 5', 'tieude 5', '#####'],
++    'h6': ['h6', 'heading 6', 'header 6', 'tieude 6', '######'],
++    'text': ['text', 'paragraph', 'vanban', 'doanvan', 'p'],
++    'quote': ['quote', 'blockquote', 'trichdan', '>'],
++    'divider': ['divider', 'hr', 'line', 'horizontal', 'duongke', '---'],
++    'bullet-list': ['bullet', 'list', 'ul', 'danhsach', '*'],
++    'ordered-list': ['ordered', 'numbered', 'number', 'ol', 'stt', '1.'],
++    'task-list': ['task', 'todo', 'check', 'checkbox', 'checklist', '[ ]'],
++    'image': ['image', 'img', 'picture', 'photo', 'anh', 'hinh', '![]'],
++    'code': ['code', 'codeblock', 'snippet', 'js', 'ts', 'py', 'java', '```'],
++    'table': ['table', 'tb', 'grid', 'bang', 'cot', 'hang'],
++    'math': ['math', 'latex', 'formula', 'equation', 'toan', '$$'],
++    'note': ['note', 'info', 'ghichu', 'thongtin'],
++    'tip': ['tip', 'hint', 'meo', 'huongdan'],
++    'warning': ['warning', 'warn', 'alert', 'canhbao'],
++    'caution': ['caution', 'danger', 'stop', 'nguyhiem'],
++    'success': ['success', 'done', 'ok', 'thanhcong'],
++    'important': ['important', 'quantrong', 'key'],
++    'youtube-video': ['youtube', 'yt', 'video', 'embed'],
++    'custom-video': ['video', 'mp4', 'player', 'media'],
++    'mermaid-diagram': ['mermaid', 'diagram', 'flowchart', 'chart', 'sodo'],
++    'highlight-text': ['highlight', 'high', 'hl', 'color', 'mark', 'to'],
++  };
+   if (filter) {
+-    groups = groups.map((group) => {
+-      const items2 = group.items.filter(
+-        (item) => item.label.toLowerCase().includes(filter.toLowerCase())
+-      );
+-      return {
+-        ...group,
+-        items: items2
+-      };
+-    }).filter((group) => group.items.length > 0);
++    const q = filter.trim().toLowerCase();
++    if (q) {
++      groups = groups.map((group) => {
++        const items2 = group.items.filter((item) => {
++          const labelMatch = item.label.toLowerCase().includes(q);
++          const keyMatch = item.key && item.key.toLowerCase().includes(q);
++          const aliases = ALIAS_MAP[item.key] || [];
++          const aliasMatch = aliases.some((a) => a.toLowerCase().includes(q) || q.includes(a.toLowerCase()));
++          return labelMatch || keyMatch || aliasMatch;
++        });
++        return {
++          ...group,
++          items: items2
++        };
++      }).filter((group) => group.items.length > 0);
++    }
+   }
+   const items = groups.flatMap((groups2) => groups2.items);
+   items.forEach((item, index) => {
+@@ -864,7 +899,7 @@ const Menu = defineComponent({
+           return nextGroup.range[0];
+         }, scrollToIndex);
+       }
+-      if (e.key === "Enter") {
++      if (e.key === "Enter" || e.key === "Tab") {
+         e.preventDefault();
+         runByIndex(hoverIndex.value);
+       }
+diff --git a/lib/esm/feature/top-bar/index.js b/lib/esm/feature/top-bar/index.js
+index 82fd0fd68e17dec4394169ffb0d26d03366b3d56..065a98fd4af9296782112bf1f2e290cebcd6171e 100644
+--- a/lib/esm/feature/top-bar/index.js
++++ b/lib/esm/feature/top-bar/index.js
+@@ -679,6 +679,10 @@ const TopBar = defineComponent({
+         {
+           key: item.key,
+           type: "button",
++          "data-key": item.key,
++          "data-item": item.key,
++          title: item.label,
++          "aria-label": item.label,
+           class: clsx("top-bar-item", checkActive(item.active) && "active"),
+           onPointerdown: onClick(item.onRun)
+         },
