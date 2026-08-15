@@ -23,16 +23,28 @@ import { linkTooltip } from "@milkdown/crepe/feature/link-tooltip";
 import { blockEdit } from "@milkdown/crepe/feature/block-edit";
 import { codeMirror } from "@milkdown/crepe/feature/code-mirror";
 import { cursor } from "@milkdown/crepe/feature/cursor";
-import { latex } from "@milkdown/crepe/feature/latex";
 import { listItem } from "@milkdown/crepe/feature/list-item";
 import { table } from "@milkdown/crepe/feature/table";
 import { topBar } from "@milkdown/crepe/feature/top-bar";
 import { toolbar } from "@milkdown/crepe/feature/toolbar";
 import { Compartment } from "@codemirror/state";
 import { EditorView as CMEditorView } from "@codemirror/view";
-import { HighlightStyle, syntaxHighlighting, LanguageDescription, type LanguageSupport } from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting, LanguageDescription, StreamLanguage, type LanguageSupport } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
-import { languages as allLanguages } from "@codemirror/language-data";
+import { javascript } from "@codemirror/lang-javascript";
+import { json } from "@codemirror/lang-json";
+import { python } from "@codemirror/lang-python";
+import { sql } from "@codemirror/lang-sql";
+import { yaml } from "@codemirror/lang-yaml";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { markdown } from "@codemirror/lang-markdown";
+import { cpp } from "@codemirror/lang-cpp";
+import { rust } from "@codemirror/lang-rust";
+import { java } from "@codemirror/lang-java";
+import { php } from "@codemirror/lang-php";
+import { go } from "@codemirror/lang-go";
+import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { onThemeChange } from "./utils/themeBus";
 import { renderMermaidSvg, reinitializeMermaidTheme } from "./utils/mermaidService";
 import { copyPngToClipboard } from "./utils/mermaidExport";
@@ -96,39 +108,6 @@ export function setLogTableSel(enabled: boolean): void {
     logTableSel = enabled;
 }
 
-// Common language filter to keep bundle lightweight while ensuring fast on-demand syntax highlighting
-const COMMON_LANGS = new Set([
-    "javascript",
-    "typescript",
-    "jsx",
-    "tsx",
-    "json",
-    "yaml",
-    "sql",
-    "python",
-    "shell",
-    "bash",
-    "sh",
-    "html",
-    "css",
-    "markdown",
-    "xml",
-    "c",
-    "c++",
-    "cpp",
-    "go",
-    "rust",
-    "java",
-    "php",
-]);
-
-const commonCodeLanguages = allLanguages.filter((l) =>
-    COMMON_LANGS.has(l.name.toLowerCase()) ||
-    l.alias.some((a) => COMMON_LANGS.has(a.toLowerCase()))
-);
-
-const shellLang = allLanguages.find((l) => l.name.toLowerCase() === "shell");
-
 const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Text",
@@ -137,11 +116,80 @@ const codeLanguages: LanguageDescription[] = [
         load: async () => undefined as unknown as LanguageSupport,
     }),
     LanguageDescription.of({
-        name: "cURL",
-        alias: ["curl"],
-        load: () => (shellLang ? shellLang.load() : Promise.resolve(undefined as unknown as LanguageSupport)),
+        name: "JavaScript",
+        alias: ["javascript", "js", "jsx", "mjs", "cjs"],
+        support: javascript({ jsx: true }),
     }),
-    ...commonCodeLanguages,
+    LanguageDescription.of({
+        name: "TypeScript",
+        alias: ["typescript", "ts", "tsx", "mts", "cts"],
+        support: javascript({ typescript: true, jsx: true }),
+    }),
+    LanguageDescription.of({
+        name: "JSON",
+        alias: ["json", "jsonc"],
+        support: json(),
+    }),
+    LanguageDescription.of({
+        name: "Python",
+        alias: ["python", "py"],
+        support: python(),
+    }),
+    LanguageDescription.of({
+        name: "Bash",
+        alias: ["bash", "sh", "zsh", "shell", "curl"],
+        support: StreamLanguage.define(shell),
+    }),
+    LanguageDescription.of({
+        name: "SQL",
+        alias: ["sql", "mysql", "pgsql", "sqlite"],
+        support: sql(),
+    }),
+    LanguageDescription.of({
+        name: "YAML",
+        alias: ["yaml", "yml"],
+        support: yaml(),
+    }),
+    LanguageDescription.of({
+        name: "HTML",
+        alias: ["html", "htm", "xml"],
+        support: html(),
+    }),
+    LanguageDescription.of({
+        name: "CSS",
+        alias: ["css", "scss", "less"],
+        support: css(),
+    }),
+    LanguageDescription.of({
+        name: "Markdown",
+        alias: ["markdown", "md"],
+        support: markdown(),
+    }),
+    LanguageDescription.of({
+        name: "C/C++",
+        alias: ["c", "cpp", "c++", "h", "hpp"],
+        support: cpp(),
+    }),
+    LanguageDescription.of({
+        name: "Rust",
+        alias: ["rust", "rs"],
+        support: rust(),
+    }),
+    LanguageDescription.of({
+        name: "Go",
+        alias: ["go"],
+        support: StreamLanguage.define(go),
+    }),
+    LanguageDescription.of({
+        name: "Java",
+        alias: ["java"],
+        support: java(),
+    }),
+    LanguageDescription.of({
+        name: "PHP",
+        alias: ["php"],
+        support: php(),
+    }),
     LanguageDescription.of({
         name: "Mermaid",
         alias: ["mermaid", "mmd"],
@@ -959,7 +1007,6 @@ export async function createEditor(
         })
         .addFeature(toolbar)
         .addFeature(table)
-        .addFeature(latex)
         .addFeature(linkTooltip);
 
     crepe.editor

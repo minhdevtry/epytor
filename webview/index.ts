@@ -3,7 +3,6 @@ import "@milkdown/crepe/theme/common/prosemirror.css";
 import "@milkdown/crepe/theme/common/reset.css";
 import "@milkdown/crepe/theme/common/code-mirror.css";
 import "@milkdown/crepe/theme/common/cursor.css";
-import "@milkdown/crepe/theme/common/latex.css";
 import "@milkdown/crepe/theme/common/list-item.css";
 import "@milkdown/crepe/theme/common/table.css";
 import "@milkdown/crepe/theme/common/top-bar.css";
