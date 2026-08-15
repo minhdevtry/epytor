@@ -215,12 +215,6 @@ body {
     text-align: right !important;
 }
 
-.milkdown .ProseMirror [align="justify"],
-.milkdown .ProseMirror .epytor-align-justify,
-.milkdown .ProseMirror .align-justify {
-    text-align: justify !important;
-}
-
 .milkdown .ProseMirror [align="left"],
 .milkdown .ProseMirror .epytor-align-left,
 .milkdown .ProseMirror .align-left {

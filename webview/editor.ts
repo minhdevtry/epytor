@@ -73,7 +73,7 @@ import { listLiftPlugin } from "./plugins/listLiftPlugin";
 import { formatKeymapPlugin } from "./plugins/formatKeymapPlugin";
 import { selectionPlugin, registerSelectionChangeHandler } from "./plugins/selectionPlugin";
 import { imagePastePlugin } from "./plugins/imagePastePlugin";
-import { textAlignPlugin, getActiveAlignment, setBlockAlignment } from "./plugins/textAlignPlugin";
+import { textAlignPlugin, getActiveAlignment, setBlockAlignment, cycleAlignment, type TextAlign } from "./plugins/textAlignPlugin";
 import { headingFoldPlugin } from "./plugins/headingFoldPlugin";
 
 // ─── Modals ─────────────────────────────────────────────────────────────────
@@ -619,26 +619,26 @@ export async function createEditor(
                         showHighlightColorPalette(null, ctx);
                     },
                 });
-                builder.addGroup('align', '').addItem('align-left', {
+
+                const updateAlignIcons = (align: TextAlign | null) => {
+                    const iconSvg = align === 'center' ? TbAlignCenter : (align === 'right' ? TbAlignRight : TbAlignLeft);
+                    document.querySelectorAll<HTMLElement>('[data-item-id="align-cycle"]').forEach((btn) => {
+                        const iconContainer = btn.querySelector('.icon') || btn;
+                        iconContainer.innerHTML = iconSvg;
+                    });
+                };
+
+                builder.addGroup('align', '').addItem('align-cycle', {
                     icon: TbAlignLeft,
-                    label: t('Align left') || 'Align left',
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'left',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'left'),
-                }).addItem('align-center', {
-                    icon: TbAlignCenter,
-                    label: t('Align center') || 'Align center',
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'center',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'center'),
-                }).addItem('align-right', {
-                    icon: TbAlignRight,
-                    label: t('Align right') || 'Align right',
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'right',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'right'),
-                }).addItem('align-justify', {
-                    icon: TbAlignJustify,
-                    label: t('Align justify') || 'Align justify',
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'justify',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'justify'),
+                    label: t('Align') || 'Align',
+                    active: (ctx) => {
+                        const align = getActiveAlignment(ctx.get(editorViewCtx));
+                        return align === 'center' || align === 'right';
+                    },
+                    onRun: (ctx) => {
+                        const next = cycleAlignment(ctx.get(editorViewCtx));
+                        updateAlignIcons(next);
+                    },
                 });
             },
         })
@@ -653,6 +653,14 @@ export async function createEditor(
                 { label: 'H6', level: 6 },
             ],
             buildTopBar: (builder) => {
+                const updateAlignIcons = (align: TextAlign | null) => {
+                    const iconSvg = align === 'center' ? TbAlignCenter : (align === 'right' ? TbAlignRight : TbAlignLeft);
+                    document.querySelectorAll<HTMLElement>('[data-item-id="align-cycle"]').forEach((btn) => {
+                        const iconContainer = btn.querySelector('.icon') || btn;
+                        iconContainer.innerHTML = iconSvg;
+                    });
+                };
+
                 // Undo/Redo Group
                 builder.addGroup('history', '').addItem('undo', {
                     icon: TbUndo,
@@ -664,23 +672,17 @@ export async function createEditor(
                     onRun: (ctx: Ctx) => { const v = ctx.get(editorViewCtx); redo(v.state, v.dispatch, v); },
                 });
 
-                // Align Group
-                builder.addGroup('align', '').addItem('align-left', {
+                // Align Group (dynamic cycle)
+                builder.addGroup('align', '').addItem('align-cycle', {
                     icon: TbAlignLeft,
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'left',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'left'),
-                }).addItem('align-center', {
-                    icon: TbAlignCenter,
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'center',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'center'),
-                }).addItem('align-right', {
-                    icon: TbAlignRight,
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'right',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'right'),
-                }).addItem('align-justify', {
-                    icon: TbAlignJustify,
-                    active: (ctx) => getActiveAlignment(ctx.get(editorViewCtx)) === 'justify',
-                    onRun: (ctx) => setBlockAlignment(ctx.get(editorViewCtx), 'justify'),
+                    active: (ctx) => {
+                        const align = getActiveAlignment(ctx.get(editorViewCtx));
+                        return align === 'center' || align === 'right';
+                    },
+                    onRun: (ctx) => {
+                        const next = cycleAlignment(ctx.get(editorViewCtx));
+                        updateAlignIcons(next);
+                    },
                 });
 
                 // Clear formatting

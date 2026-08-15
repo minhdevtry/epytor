@@ -43,7 +43,6 @@ import { setImageUriMap, showGlobalLightbox } from "./components/imageView";
 import { initFindBar } from "./components/findBar";
 import { initHeadingIds } from "./headingIds";
 import { initToc } from "./components/toc";
-import { initStickyHeading } from "./components/stickyHeading";
 import type { Editor } from "@milkdown/kit/core";
 import { editorViewCtx } from "@milkdown/kit/core";
 import { applyTooltip } from "./ui/tooltip";
@@ -262,9 +261,6 @@ function insertImageNode(src: string, alt: string): void {
 const toc = initToc(() => getEditorView());
 document.body.appendChild(toc.panel);
 
-// Initialize sticky heading breadcrumb
-const stickyHeading = initStickyHeading(() => getEditorView());
-
 // Initialize the find bar
 const findBar = initFindBar(() => document.getElementById("editor"));
 
@@ -373,13 +369,11 @@ async function initEditor(
             if (typeof window.requestIdleCallback === "function") {
                 window.requestIdleCallback(() => {
                     toc.refresh();
-                    stickyHeading.update();
                     updateWordCount();
                 });
             } else {
                 setTimeout(() => {
                     toc.refresh();
-                    stickyHeading.update();
                     updateWordCount();
                 }, 16);
             }
@@ -403,7 +397,6 @@ async function initEditor(
         const ro = new ResizeObserver(() => {
             syncTopBarHeight();
             toc.updatePosition();
-            stickyHeading.update();
         });
         ro.observe(topBarEl);
     }
@@ -413,7 +406,6 @@ async function initEditor(
         toc.updatePosition();
         toc.refresh();
         toc.show();
-        stickyHeading.update();
         updateWordCount();
     };
     if (typeof window.requestIdleCallback === "function") {

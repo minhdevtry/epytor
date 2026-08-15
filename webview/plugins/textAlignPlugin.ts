@@ -1,17 +1,17 @@
 import { $prose } from "@milkdown/kit/utils";
-import { Plugin, PluginKey, TextSelection } from "@milkdown/kit/prose/state";
+import { Plugin, PluginKey } from "@milkdown/kit/prose/state";
 import { Decoration, DecorationSet, type EditorView } from "@milkdown/kit/prose/view";
 
 export const textAlignPluginKey = new PluginKey("text_align_decorations");
 
-export type TextAlign = "left" | "center" | "right" | "justify";
+export type TextAlign = "left" | "center" | "right";
 
 /**
  * Parses align tag from text, e.g. <p align="center">, <div align="right">, <h1 align="center">, or style="text-align: center"
  */
 export function getAlignFromText(text: string): TextAlign | null {
-    const match = text.match(/align=["'](left|center|right|justify)["']/i) ||
-                  text.match(/text-align:\s*(left|center|right|justify)/i);
+    const match = text.match(/align=["'](left|center|right)["']/i) ||
+                  text.match(/text-align:\s*(left|center|right)/i);
     if (match) {
         return match[1].toLowerCase() as TextAlign;
     }
@@ -55,8 +55,8 @@ export function setBlockAlignment(view: EditorView, align: TextAlign): void {
         const currentText = node.textContent;
         const currentAlign = getAlignFromText(currentText);
 
-        if (currentAlign === align) {
-            // Toggle OFF: Remove alignment wrapper
+        if (align === "left") {
+            // Left is default: remove any alignment wrapper
             let newText = currentText
                 .replace(/^<(?:p|div|h[1-6])\s+align=["'][^"']+["']\s*>/i, "")
                 .replace(/<\/(?:p|div|h[1-6])>\s*$/i, "")
@@ -97,6 +97,20 @@ export function setBlockAlignment(view: EditorView, align: TextAlign): void {
     if (modified) {
         dispatch(tr);
     }
+}
+
+/**
+ * Cycle through text alignment sequentially: Left -> Center -> Right -> Left
+ */
+export function cycleAlignment(view: EditorView): TextAlign {
+    const current = getActiveAlignment(view) ?? "left";
+    let next: TextAlign = "center";
+    if (current === "center") next = "right";
+    else if (current === "right") next = "left";
+    else next = "center";
+
+    setBlockAlignment(view, next);
+    return next;
 }
 
 /**
