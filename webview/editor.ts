@@ -619,6 +619,53 @@ export async function createEditor(
         });
     });
 
+    // ─── Mark Highlight Plugin (<mark style="...">...</mark>) ─────
+    const markHighlightPluginKey = new PluginKey("mark_highlight_decorations");
+    const markHighlightPlugin = $prose(() => {
+        return new Plugin({
+            key: markHighlightPluginKey,
+            props: {
+                decorations(state) {
+                    const decos: Decoration[] = [];
+                    state.doc.descendants((node, pos) => {
+                        if (node.isText) {
+                            const text = node.text || "";
+                            const markRegex = /<mark(?:\s+style=["'](?:background(?:-color)?:\s*([^;"']+))[^"']*["'])?>([\s\S]*?)<\/mark>/gi;
+                            let match: RegExpExecArray | null;
+                            while ((match = markRegex.exec(text)) !== null) {
+                                const fullMatch = match[0];
+                                const bgColor = match[1] || "rgba(250, 204, 21, 0.45)";
+                                const openTagMatch = fullMatch.match(/^<mark(?:\s+style=["'][^"']*["'])?>/i);
+                                const openTagLen = openTagMatch ? openTagMatch[0].length : 6;
+                                const closeTagLen = 7; // </mark>
+
+                                const matchStart = pos + match.index;
+                                const contentStart = matchStart + openTagLen;
+                                const contentEnd = matchStart + fullMatch.length - closeTagLen;
+                                const matchEnd = matchStart + fullMatch.length;
+
+                                if (contentStart < contentEnd) {
+                                    // Ẩn thẻ mở <mark ...>
+                                    decos.push(Decoration.inline(matchStart, contentStart, { class: "mark-tag-hidden" }));
+                                    // Tô màu nội dung bên trong
+                                    decos.push(
+                                        Decoration.inline(contentStart, contentEnd, {
+                                            class: "text-highlight-inline",
+                                            style: `background-color: ${bgColor};`,
+                                        })
+                                    );
+                                    // Ẩn thẻ đóng </mark>
+                                    decos.push(Decoration.inline(contentEnd, matchEnd, { class: "mark-tag-hidden" }));
+                                }
+                            }
+                        }
+                    });
+                    return DecorationSet.create(state.doc, decos);
+                },
+            },
+        });
+    });
+
     // ─── Video Decoration Plugin (Iframe & Video Embeds) ─────────
     const videoPluginKey = new PluginKey("video_decorations");
     const videoDecorationPlugin = $prose(() => {
@@ -651,14 +698,20 @@ export async function createEditor(
                                 <div class="video-toolbar-bar">
                                     <div class="video-toolbar-title">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff0000" style="vertical-align:middle;margin-right:6px"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                        <span>YouTube Video Player</span>
+                                        <span>YouTube Player (${videoId})</span>
                                     </div>
                                     <div class="video-toolbar-actions">
                                         <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" class="video-action-btn" title="Mở trên YouTube">🌐 Mở tab mới</a>
                                     </div>
                                 </div>
                                 <div class="video-iframe-wrapper">
-                                    <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                                    <iframe 
+                                        src="https://www.youtube.com/embed/${videoId}" 
+                                        title="YouTube video player" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                        allowfullscreen>
+                                    </iframe>
                                 </div>
                             `;
                             decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
@@ -1523,6 +1576,7 @@ export async function createEditor(
         })
         .use(listener)              // 追加 listener 用于 markdownUpdated
         .use(calloutPlugin)         // Callouts 5 loại (Note, Tip, Warning, Danger, Success)
+        .use(markHighlightPlugin)   // Mark Text Highlights
         .use(videoDecorationPlugin) // Video & YouTube Embeds
         .use(listLiftPlugin)        // 保留：列表 backspace
         .use(selectionPlugin)       // 保留：选区变更回调
