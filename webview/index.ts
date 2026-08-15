@@ -966,5 +966,8 @@ onMessage(async (msg) => {
         dispatchImgPathSuggestions(msg.id, msg.items);
     } else if (msg.type === "imagePathResolved") {
         dispatchImagePathResolved(msg.id, msg.webviewUri);
+    } else if (msg.type === "setTableWrapMode") {
+        document.body.classList.toggle("epytor-table-nowrap", msg.wrapMode === "nowrap");
+        document.body.classList.toggle("epytor-table-wrap", msg.wrapMode !== "nowrap");
     }
 });

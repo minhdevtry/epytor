@@ -204,6 +204,15 @@ export function activate(context: vscode.ExtensionContext) {
                     enabled: v,
                 });
             }
+            if (e.affectsConfiguration("epytor.tableWrapMode")) {
+                const wrapMode = vscode.workspace
+                    .getConfiguration("epytor")
+                    .get<string>("tableWrapMode", "wrap");
+                MarkdownEditorProvider.current?.postToAll({
+                    type: "setTableWrapMode",
+                    wrapMode,
+                } as any);
+            }
         }),
     );
 

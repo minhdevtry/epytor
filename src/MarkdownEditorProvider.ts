@@ -568,7 +568,8 @@ export class MarkdownEditorProvider
         const isMac = process.platform === 'darwin';
         const translations = lang.startsWith('zh') ? ZH_CN_WEBVIEW : {};
         const debugMode = cfg.get<boolean>("debugMode", false);
-        const i18nScript = `window.__i18n=${JSON.stringify({ translations, isMac, debugMode })};`;
+        const tableWrapMode = cfg.get<string>("tableWrapMode", "wrap");
+        const i18nScript = `window.__i18n=${JSON.stringify({ translations, isMac, debugMode, tableWrapMode })};`;
 
         return `<!DOCTYPE html>
 <html lang="${vscode.env.language}">
@@ -588,7 +589,7 @@ export class MarkdownEditorProvider
   <link rel="stylesheet" href="${styleUri}">
   <style>:root { --code-block-max-height: ${maxHeight}px; --editor-max-width: ${editorMaxWidth}px;${fontFamily ? ` --custom-font-family: ${fontFamily};` : ''} --image-selection-color: ${imageSelectionColor}; }</style>
 </head>
-<body>
+<body class="${tableWrapMode === 'nowrap' ? 'epytor-table-nowrap' : 'epytor-table-wrap'}">
   <div class="editor-topbar"></div>
   <div id="editor"></div>
   <script nonce="${nonce}">${i18nScript}</script>

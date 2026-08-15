@@ -217,6 +217,25 @@ body {
     padding-bottom: 0;
 }
 
+/* Table wrap / nowrap modes */
+.epytor-table-wrap .milkdown .ProseMirror table td,
+.epytor-table-wrap .milkdown .ProseMirror table th {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.epytor-table-nowrap .milkdown .ProseMirror table td,
+.epytor-table-nowrap .milkdown .ProseMirror table th {
+    white-space: nowrap !important;
+}
+
+.epytor-table-nowrap .milkdown .milkdown-table-block,
+.epytor-table-nowrap .milkdown .ProseMirror .tableWrapper {
+    overflow-x: auto !important;
+    max-width: 100%;
+}
+
 /* Headings: explicit sizes per level, six-level arithmetic decrease */
 .milkdown .ProseMirror h1,
 .milkdown .ProseMirror h2,

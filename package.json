@@ -158,6 +158,20 @@
           "default": false,
           "description": "%config.debugMode.description%"
         },
+        "epytor.tableWrapMode": {
+          "order": 9,
+          "type": "string",
+          "enum": [
+            "wrap",
+            "nowrap"
+          ],
+          "enumDescriptions": [
+            "%config.tableWrapMode.wrap%",
+            "%config.tableWrapMode.nowrap%"
+          ],
+          "default": "wrap",
+          "description": "%config.tableWrapMode.description%"
+        },
         "epytor.imageStorage": {
           "order": 10,
           "type": "string",

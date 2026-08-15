@@ -54,4 +54,5 @@ export type ToWebviewMessage =
     | { type: "imageRenameError"; id: string; error: string }
     | { type: "requestSwitchToTextEditor" }
     | { type: "pathSuggestions"; id: string; items: PathSuggestionItem[] }
-    | { type: "imagePathResolved"; id: string; webviewUri: string };
+    | { type: "imagePathResolved"; id: string; webviewUri: string }
+    | { type: "setTableWrapMode"; wrapMode: string };
