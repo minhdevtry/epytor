@@ -1,6 +1,7 @@
 import { $prose } from "@milkdown/kit/utils";
 import { Plugin, PluginKey } from "@milkdown/kit/prose/state";
 import { Decoration, DecorationSet } from "@milkdown/kit/prose/view";
+import { IconExternalLink } from "../ui/icons";
 
 export const videoPluginKey = new PluginKey("video_decorations");
 
@@ -38,7 +39,7 @@ function createYouTubeWidget(videoId: string): HTMLElement {
                 <span>YouTube Player (${videoId})</span>
             </div>
             <div class="video-toolbar-actions">
-                <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" class="video-action-btn" title="Open on YouTube">🌐 Open Tab</a>
+                <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" class="video-action-btn" title="Open on YouTube">${IconExternalLink} <span>Open Tab</span></a>
             </div>
         </div>
         <div class="video-iframe-wrapper">

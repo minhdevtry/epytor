@@ -1,6 +1,10 @@
+import { IconZoomIn, IconZoomOut, IconResetZoom, IconCopy, IconX } from "../icons";
+
 export function showMermaidZoomModal(svgContent: string, rawCode: string): void {
     const modal = document.createElement("div");
     modal.className = "mermaid-zoom-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
 
     let scale = 1;
     let translateX = 0;
@@ -13,13 +17,13 @@ export function showMermaidZoomModal(svgContent: string, rawCode: string): void 
         <div class="mermaid-zoom-backdrop"></div>
         <div class="mermaid-zoom-dialog">
             <div class="mermaid-zoom-header">
-                <div class="mermaid-zoom-title">📊 Mermaid Diagram (Zoom & Pan)</div>
+                <div class="mermaid-zoom-title">Mermaid Diagram</div>
                 <div class="mermaid-zoom-actions">
-                    <button class="mzm-btn mzm-zoom-in" title="Zoom In (+)">➕ Zoom in</button>
-                    <button class="mzm-btn mzm-zoom-out" title="Zoom Out (-)">➖ Zoom out</button>
-                    <button class="mzm-btn mzm-zoom-reset" title="Reset (100%)">1:1</button>
-                    <button class="mzm-btn mzm-copy" title="Copy Mermaid Code">📋 Copy Code</button>
-                    <button class="mzm-btn mzm-close" title="Close (Esc)">✕</button>
+                    <button class="mzm-btn mzm-zoom-in" title="Zoom In (+)">${IconZoomIn}</button>
+                    <button class="mzm-btn mzm-zoom-out" title="Zoom Out (-)">${IconZoomOut}</button>
+                    <button class="mzm-btn mzm-zoom-reset" title="Reset (100%)">${IconResetZoom}</button>
+                    <button class="mzm-btn mzm-copy" title="Copy Mermaid Code">${IconCopy} <span class="mzm-btn-label">Copy</span></button>
+                    <button class="mzm-btn mzm-close" title="Close (Esc)">${IconX}</button>
                 </div>
             </div>
             <div class="mermaid-zoom-viewport">
@@ -88,8 +92,11 @@ export function showMermaidZoomModal(svgContent: string, rawCode: string): void 
     const copyBtn = modal.querySelector<HTMLButtonElement>(".mzm-copy");
     copyBtn?.addEventListener("click", () => {
         navigator.clipboard.writeText(rawCode).then(() => {
-            copyBtn.textContent = "✓ Copied!";
-            setTimeout(() => { copyBtn.textContent = "📋 Copy Code"; }, 1500);
+            const label = copyBtn.querySelector(".mzm-btn-label");
+            if (label) label.textContent = "Copied!";
+            setTimeout(() => {
+                if (label) label.textContent = "Copy";
+            }, 1500);
         });
     });
 

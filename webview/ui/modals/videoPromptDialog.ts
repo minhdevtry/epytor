@@ -1,12 +1,16 @@
 import type { Ctx } from "@milkdown/kit/ctx";
 import { editorViewCtx } from "@milkdown/kit/core";
+import { IconBrandYoutube, IconVideo, IconX } from "../icons";
 
 export function promptVideoInsert(type: "youtube" | "video", ctx: Ctx): void {
     const overlay = document.createElement("div");
     overlay.className = "video-prompt-modal";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
 
     const isYT = type === "youtube";
-    const titleText = isYT ? "🎥 Insert YouTube Video" : "🎬 Insert Video Player";
+    const titleIcon = isYT ? IconBrandYoutube : IconVideo;
+    const titleLabel = isYT ? "Insert YouTube Video" : "Insert Video Player";
     const placeholderText = isYT
         ? "Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)"
         : "Paste video link / path (MP4, WebM, URL...)";
@@ -15,8 +19,8 @@ export function promptVideoInsert(type: "youtube" | "video", ctx: Ctx): void {
         <div class="video-prompt-backdrop"></div>
         <div class="video-prompt-dialog">
             <div class="video-prompt-header">
-                <div class="video-prompt-title">${titleText}</div>
-                <button class="video-prompt-close">✕</button>
+                <div class="video-prompt-title">${titleIcon} <span>${titleLabel}</span></div>
+                <button class="video-prompt-close" title="Close">${IconX}</button>
             </div>
             <div class="video-prompt-body">
                 <input type="text" class="video-prompt-input" placeholder="${placeholderText}" />

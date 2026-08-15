@@ -1,5 +1,6 @@
 import type { Ctx } from "@milkdown/kit/ctx";
 import { editorViewCtx } from "@milkdown/kit/core";
+import { IconBan } from "../icons";
 
 export function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx): void {
     const existing = document.querySelector(".highlight-color-picker-popover");
@@ -10,6 +11,8 @@ export function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx
 
     const popover = document.createElement("div");
     popover.className = "highlight-color-picker-popover";
+    popover.setAttribute("role", "dialog");
+    popover.setAttribute("aria-modal", "true");
 
     const colors = [
         { label: "Yellow", color: "rgba(250, 204, 21, 0.45)", hex: "#fde047" },
@@ -36,7 +39,7 @@ export function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx
                 <input type="color" class="hl-custom-input" value="#fde047" title="Custom color" />
                 <span>Custom</span>
             </label>
-            <button type="button" class="hl-clear-btn" title="Remove highlight">🚫 Clear</button>
+            <button type="button" class="hl-clear-btn" title="Remove highlight">${IconBan} <span>Clear</span></button>
         </div>
     `;
 

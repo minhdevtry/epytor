@@ -87,6 +87,7 @@ export const ZH_CN_WEBVIEW: Record<string, string> = {
     'Toggle preview': '切换预览',
     'Math Formula': '数学公式',
     'View Fullscreen': '全屏查看',
+    'Exit Fullscreen': '退出全屏',
     'Rendering...': '渲染中...',
     // findBar
     'Find': '查找',

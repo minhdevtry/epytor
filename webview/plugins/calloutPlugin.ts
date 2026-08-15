@@ -4,21 +4,46 @@ import { Decoration, DecorationSet } from "@milkdown/kit/prose/view";
 
 export const calloutPluginKey = new PluginKey("callout_decorations");
 
-const CALLOUT_ICONS: Record<string, { icon: string; title: string }> = {
-    note: { icon: "ℹ️", title: "NOTE" },
-    info: { icon: "ℹ️", title: "NOTE" },
-    tip: { icon: "💡", title: "TIP" },
-    warning: { icon: "⚠️", title: "WARNING" },
-    caution: { icon: "🛑", title: "CAUTION" },
-    danger: { icon: "🛑", title: "CAUTION" },
-    success: { icon: "✅", title: "SUCCESS" },
-    important: { icon: "📌", title: "IMPORTANT" },
+const CALLOUT_TITLES: Record<string, string> = {
+    note: "NOTE",
+    info: "NOTE",
+    tip: "TIP",
+    warning: "WARNING",
+    caution: "CAUTION",
+    danger: "CAUTION",
+    success: "SUCCESS",
+    important: "IMPORTANT",
 };
 
 export const calloutPlugin = $prose(() => {
     return new Plugin({
         key: calloutPluginKey,
         props: {
+            handleKeyDown(view, event) {
+                if (event.key === "Backspace") {
+                    const { state } = view;
+                    const { selection } = state;
+                    if (selection.empty) {
+                        const { from } = selection;
+                        const $pos = state.doc.resolve(from);
+                        if ($pos.parent.type.name === "paragraph") {
+                            const pText = $pos.parent.textContent || "";
+                            const match = pText.match(/^\\?\[!(NOTE|INFO|TIP|WARNING|CAUTION|DANGER|SUCCESS|IMPORTANT)\\?\]\s*/i);
+                            if (match) {
+                                const tagLen = match[0].length;
+                                const tagEndPos = $pos.start() + tagLen;
+                                if (from === tagEndPos) {
+                                    event.preventDefault();
+                                    const tr = state.tr.delete($pos.start(), tagEndPos);
+                                    view.dispatch(tr);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                return false;
+            },
             decorations(state) {
                 const decos: Decoration[] = [];
 
@@ -32,7 +57,7 @@ export const calloutPlugin = $prose(() => {
                             if (match) {
                                 const rawType = match[1].toLowerCase();
                                 const type = rawType === "info" ? "note" : rawType === "danger" ? "caution" : rawType;
-                                const meta = CALLOUT_ICONS[rawType] || { icon: "💬", title: rawType.toUpperCase() };
+                                const title = CALLOUT_TITLES[rawType] || rawType.toUpperCase();
 
                                 // Add callout container class to blockquote
                                 decos.push(
@@ -46,8 +71,7 @@ export const calloutPlugin = $prose(() => {
                                 decos.push(
                                     Decoration.inline(pos + 2, pos + 2 + tagLen, {
                                         class: `callout-badge-tag callout-badge-tag-${type}`,
-                                        "data-icon": meta.icon,
-                                        "data-title": meta.title,
+                                        "data-title": title,
                                     }),
                                 );
                             }

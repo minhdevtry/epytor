@@ -36,7 +36,24 @@ import { languages as allCodeLanguages } from "@codemirror/language-data";
 import mermaid from "mermaid";
 import { onThemeChange } from "./utils/themeBus";
 import { t } from "./i18n";
-import { TbUndo, TbRedo, TbImage, TbEraser, TbGear, TbToc, TbHighlighter } from "./ui/icons";
+import {
+    TbUndo,
+    TbRedo,
+    TbImage,
+    TbEraser,
+    TbGear,
+    TbToc,
+    TbHighlighter,
+    IconAlertCircle,
+    IconInfo,
+    IconLightbulb,
+    IconAlertTriangle,
+    IconCheckCircle,
+    IconPin,
+    IconBrandYoutube,
+    IconVideo,
+    IconHighlighter,
+} from "./ui/icons";
 
 // ─── Plugins ────────────────────────────────────────────────────────────────
 import { calloutPlugin } from "./plugins/calloutPlugin";
@@ -423,10 +440,10 @@ export async function createEditor(
             buildMenu: (builder) => {
                 // Callouts Group
                 const calloutGroup = builder.addGroup('callouts', 'Callouts & Alerts');
-                const addCallout = (id: string, label: string, tag: string, iconText: string) => {
+                const addCallout = (id: string, label: string, tag: string, iconSvg: string) => {
                     calloutGroup.addItem(id, {
                         label,
-                        icon: `<svg width="20" height="20" viewBox="0 0 24 24"><text x="2" y="17" font-size="16">${iconText}</text></svg>`,
+                        icon: iconSvg,
                         onRun: (ctx) => {
                             const commands = ctx.get(commandsCtx);
                             const view = ctx.get(editorViewCtx);
@@ -446,18 +463,18 @@ export async function createEditor(
                     });
                 };
 
-                addCallout('caution', 'Caution / Danger', 'CAUTION', '🛑');
-                addCallout('note', 'Note / Info', 'NOTE', 'ℹ️');
-                addCallout('tip', 'Tip', 'TIP', '💡');
-                addCallout('warning', 'Warning', 'WARNING', '⚠️');
-                addCallout('success', 'Success', 'SUCCESS', '✅');
-                addCallout('important', 'Important', 'IMPORTANT', '📌');
+                addCallout('caution', 'Caution / Danger', 'CAUTION', IconAlertCircle);
+                addCallout('note', 'Note / Info', 'NOTE', IconInfo);
+                addCallout('tip', 'Tip', 'TIP', IconLightbulb);
+                addCallout('warning', 'Warning', 'WARNING', IconAlertTriangle);
+                addCallout('success', 'Success', 'SUCCESS', IconCheckCircle);
+                addCallout('important', 'Important', 'IMPORTANT', IconPin);
 
                 // Media & Embeds Group
                 const mediaGroup = builder.addGroup('media', 'Media & Embeds');
                 mediaGroup.addItem('youtube-video', {
                     label: 'YouTube Video',
-                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+                    icon: IconBrandYoutube,
                     onRun: (ctx) => {
                         const commands = ctx.get(commandsCtx);
                         commands.call(clearTextInCurrentBlockCommand.key);
@@ -466,7 +483,7 @@ export async function createEditor(
                 });
                 mediaGroup.addItem('custom-video', {
                     label: 'Video Player',
-                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
+                    icon: IconVideo,
                     onRun: (ctx) => {
                         const commands = ctx.get(commandsCtx);
                         commands.call(clearTextInCurrentBlockCommand.key);

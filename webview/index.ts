@@ -46,7 +46,7 @@ import { initToc } from "./components/toc";
 import type { Editor } from "@milkdown/kit/core";
 import { editorViewCtx } from "@milkdown/kit/core";
 import { applyTooltip } from "./ui/tooltip";
-import { IconMaximize2 } from "./ui/icons";
+import { IconMaximize2, IconMinimize2 } from "./ui/icons";
 import { t } from "./i18n";
 
 let currentEditor: Editor | null = null;
@@ -577,7 +577,7 @@ function enhanceCodeBlocks(container: HTMLElement): void {
         }, 100);
     });
 
-    // ── 全屏按钮（我们的自定义功能，不是 Crepe 的，直接创建）─────────────
+    // ── 全屏按钮（纯 CSS 全屏方案，完全不操作或抽离 CodeMirror DOM 树）─────────────
     const addFullscreenBtn = (block: Element): void => {
         const copyBtn = block.querySelector('.copy-button') as HTMLElement | null;
         if (copyBtn && !copyBtn.dataset.tip) { copyBtn.dataset.tip = '1'; applyTooltip(copyBtn, t('Copy Code')); }
@@ -591,48 +591,37 @@ function enhanceCodeBlocks(container: HTMLElement): void {
         const fsBtn = document.createElement('button');
         fsBtn.className = 'epytor-fullscreen-btn';
         fsBtn.innerHTML = IconMaximize2;
-        applyTooltip(fsBtn, t('View Fullscreen'));
+        const tip = applyTooltip(fsBtn, t('View Fullscreen'));
+
+        const toggleFullscreen = () => {
+            const isFs = block.classList.toggle('epytor-code-block-fullscreen');
+            if (isFs) {
+                fsBtn.innerHTML = IconMinimize2;
+                tip.setText(t('Exit Fullscreen'));
+                document.body.classList.add('epytor-has-fullscreen-block');
+                const onKey = (ke: KeyboardEvent) => {
+                    if (ke.key === 'Escape') {
+                        ke.preventDefault();
+                        toggleFullscreen();
+                    }
+                };
+                (fsBtn as any)._onFsKey = onKey;
+                document.addEventListener('keydown', onKey);
+            } else {
+                fsBtn.innerHTML = IconMaximize2;
+                tip.setText(t('View Fullscreen'));
+                document.body.classList.remove('epytor-has-fullscreen-block');
+                if ((fsBtn as any)._onFsKey) {
+                    document.removeEventListener('keydown', (fsBtn as any)._onFsKey);
+                    (fsBtn as any)._onFsKey = null;
+                }
+            }
+        };
+
         fsBtn.addEventListener('mousedown', (ev) => {
-            ev.preventDefault(); ev.stopPropagation();
-            const cmEditor = block.querySelector('.cm-editor') as HTMLElement | null;
-            const cmHost = block.querySelector('.codemirror-host') as HTMLElement | null;
-            const previewPanel = block.querySelector('.preview-panel') as HTMLElement | null;
-            if (!cmEditor) return;
-            const langBtn = block.querySelector('.language-button');
-            const lang = langBtn?.textContent?.trim() || '';
-
-            const lb = document.createElement('div');
-            lb.className = 'epytor-fs-lightbox';
-            const header = document.createElement('div');
-            header.className = 'epytor-fs-header';
-            const langSpan = document.createElement('span');
-            langSpan.className = 'epytor-fs-lang';
-            langSpan.textContent = lang;  // 安全注入，避免 XSS
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'epytor-fs-close';
-            closeBtn.textContent = '✕';
-            header.appendChild(langSpan);
-            header.appendChild(closeBtn);
-            const body = document.createElement('div');
-            body.className = 'epytor-fs-body';
-            lb.appendChild(header);
-            lb.appendChild(body);
-            document.body.appendChild(lb);
-            body.appendChild(cmEditor);
-            if (previewPanel) body.appendChild(previewPanel);
-
-            const close = () => {
-                if (cmHost && cmEditor.parentElement !== cmHost) cmHost.appendChild(cmEditor);
-                if (previewPanel && previewPanel.parentElement !== block) block.appendChild(previewPanel);
-                if (document.body.contains(lb)) document.body.removeChild(lb);
-                document.removeEventListener('keydown', onKey);
-            };
-            const onKey = (ke: KeyboardEvent) => {
-                if (ke.key === 'Escape') { ke.preventDefault(); close(); }
-            };
-            document.addEventListener('keydown', onKey);
-            lb.querySelector('.epytor-fs-close')!.addEventListener('mousedown', (me) => { me.preventDefault(); close(); });
-            lb.addEventListener('mousedown', (me) => { if (me.target === lb) close(); });
+            ev.preventDefault();
+            ev.stopPropagation();
+            toggleFullscreen();
         });
         btnGroup.appendChild(fsBtn);
     };
