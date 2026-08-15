@@ -1228,6 +1228,29 @@ body.epytor-modifier-active .milkdown .ProseMirror a:hover {
 }
 
 /* ─── Video & YouTube Embeds ─── */
+.raw-html-hidden {
+    display: none !important;
+}
+
+.embedded-video-container {
+    position: relative;
+    width: 100%;
+    margin: 1.2em 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    aspect-ratio: 16 / 9;
+}
+
+.embedded-video-container iframe,
+.embedded-video-container video {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
 .milkdown iframe[src*="youtube.com"],
 .milkdown iframe[src*="youtu.be"],
 .milkdown iframe[src*="vimeo.com"] {

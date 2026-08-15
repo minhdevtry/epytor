@@ -609,6 +609,60 @@ export async function createEditor(
         });
     });
 
+    // ─── Video Decoration Plugin (Iframe & Video Embeds) ─────────
+    const videoPluginKey = new PluginKey("video_decorations");
+    const videoDecorationPlugin = $prose(() => {
+        return new Plugin({
+            key: videoPluginKey,
+            props: {
+                decorations(state) {
+                    const decos: Decoration[] = [];
+                    state.doc.descendants((node, pos) => {
+                        if (node.isTextblock) {
+                            const text = (node.textContent || "").trim();
+                            // 1. <iframe ... src="..." ...></iframe>
+                            const iframeMatch = text.match(/^<iframe\s+[^>]*src=["']([^"']+)["'][^>]*>(?:<\/iframe>)?$/i);
+                            if (iframeMatch) {
+                                const src = iframeMatch[1];
+                                const widget = document.createElement("div");
+                                widget.className = "embedded-video-container";
+                                widget.innerHTML = `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
+                                return;
+                            }
+
+                            // 2. <video ... src="..." ...></video>
+                            const videoMatch = text.match(/^<video\s+[^>]*src=["']([^"']+)["'][^>]*>(?:<\/video>)?$/i);
+                            if (videoMatch) {
+                                const src = videoMatch[1];
+                                const widget = document.createElement("div");
+                                widget.className = "embedded-video-container";
+                                widget.innerHTML = `<video src="${src}" controls></video>`;
+                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
+                                return;
+                            }
+
+                            // 3. Standalone YouTube Link
+                            const ytMatch = text.match(/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/i);
+                            if (ytMatch) {
+                                const videoId = ytMatch[1];
+                                const widget = document.createElement("div");
+                                widget.className = "embedded-video-container";
+                                widget.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                                decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "raw-html-hidden" }));
+                                return;
+                            }
+                        }
+                    });
+                    return DecorationSet.create(state.doc, decos);
+                },
+            },
+        });
+    });
+
     // ─── Video & YouTube Prompt Dialog ───────────────────────────
     function promptVideoInsert(type: "youtube" | "video", ctx: Ctx) {
         const overlay = document.createElement("div");
@@ -1285,6 +1339,7 @@ export async function createEditor(
         })
         .use(listener)              // 追加 listener 用于 markdownUpdated
         .use(calloutPlugin)         // Callouts 5 loại (Note, Tip, Warning, Danger, Success)
+        .use(videoDecorationPlugin) // Video & YouTube Embeds
         .use(listLiftPlugin)        // 保留：列表 backspace
         .use(selectionPlugin)       // 保留：选区变更回调
         .use(formatKeymapPlugin)    // 保留：自定义格式化快捷键
