@@ -69,6 +69,7 @@ import { listSpreadNormalizePlugin } from "./plugins/listSpreadNormalizePlugin";
 import { listLiftPlugin } from "./plugins/listLiftPlugin";
 import { formatKeymapPlugin } from "./plugins/formatKeymapPlugin";
 import { selectionPlugin, registerSelectionChangeHandler } from "./plugins/selectionPlugin";
+import { imagePastePlugin } from "./plugins/imagePastePlugin";
 
 // ─── Modals ─────────────────────────────────────────────────────────────────
 import { showMermaidZoomModal } from "./ui/modals/mermaidZoomModal";
@@ -897,7 +898,8 @@ export async function createEditor(
         .use(selectionPlugin)
         .use(formatKeymapPlugin)
         .use(cellClickFixPlugin)
-        .use(listSpreadNormalizePlugin);
+        .use(listSpreadNormalizePlugin)
+        .use(imagePastePlugin);
 
     crepe.on((api) => {
         api.markdownUpdated((_ctx, markdown) => {

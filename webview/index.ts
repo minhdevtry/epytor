@@ -9,7 +9,7 @@ import "@milkdown/crepe/theme/common/table.css";
 import "@milkdown/crepe/theme/common/top-bar.css";
 import "@milkdown/crepe/theme/common/toolbar.css";
 import "@milkdown/crepe/theme/common/link-tooltip.css";
-import "./style.css"; // 必须在 Crepe CSS 之后加载，用 VSCode 变量覆盖 Crepe 主题
+import "./style.css"; // Must be loaded after the Crepe CSS, to override the Crepe theme via VSCode variables
 import { DEFAULT_TOPBAR_HEIGHT, VIEWPORT_PADDING } from "../shared/constants";
 import {
     createEditor,
@@ -53,7 +53,7 @@ let currentEditor: Editor | null = null;
 let currentLineMap: number[] = [];
 let _debugLog = false;
 
-// 修饰键监听：按住 Ctrl/Meta 时给 body 加 class，链接 hover 显示小手
+// Modifier-key monitor: while Ctrl/Meta is held, add a class to body so link hover shows a pointer cursor
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey) document.body.classList.add('epytor-modifier-active');
 });
@@ -65,13 +65,13 @@ export function getLineMap(): number[] {
     return currentLineMap;
 }
 
-// 存储原始 markdown 内容（来自 init/revert 消息，未经 Milkdown 序列化）
+// Store the original markdown content (from init/revert messages, not serialized by Milkdown)
 let markdownSource = "";
 export function getMarkdownSource(): string {
     return markdownSource;
 }
 
-/** 将 lineMap 中的源码行号（1-indexed）对应的块滚动到视口顶部，段内做比例插值 */
+/** Scroll the block corresponding to the source line number (1-indexed) in lineMap to the top of the viewport, with proportional interpolation within the block */
 function scrollToSourceLine(view: EditorView, lineMap: number[], targetLine: number): void {
     if (!lineMap.length) { return; }
     let blockIdx = 0;
@@ -84,7 +84,7 @@ function scrollToSourceLine(view: EditorView, lineMap: number[], targetLine: num
     const el = children[blockIdx] as HTMLElement;
     if (!el) { return; }
 
-    // 段内比例插值：目标行在段落源码中的位置比例 → 对应渲染块中的滚动偏移
+    // Within-block proportional interpolation: the proportional position of the target line in the source paragraph → the scroll offset in the corresponding rendered block
     const blockStartLine = lineMap[blockIdx];
     const totalSourceLines = getMarkdownSource().split('\n').length;
     const nextBlockStartLine = blockIdx + 1 < lineMap.length ? lineMap[blockIdx + 1] : totalSourceLines + 1;
@@ -100,7 +100,7 @@ function scrollToSourceLine(view: EditorView, lineMap: number[], targetLine: num
     window.scrollTo({ top: scrollTarget });
 }
 
-/** 检测视口顶部对应的源码行号（1-indexed），供切换到文本编辑器时定位用 */
+/** Detect the source line number (1-indexed) at the top of the viewport, used to position when switching to the text editor */
 function getFirstVisibleSourceLine(view: EditorView, lineMap: number[]): number {
     if (!lineMap.length) { return 1; }
     const topbarH = document.querySelector(".milkdown-top-bar")?.getBoundingClientRect().height ?? DEFAULT_TOPBAR_HEIGHT;
@@ -113,20 +113,20 @@ function getFirstVisibleSourceLine(view: EditorView, lineMap: number[]): number 
             return result;
         }
     }
-    // 全部块都在视口上方（理论上不会发生）→ 返回最后一块
+    // All blocks are above the viewport (theoretically impossible) → return the last block
     const fallback = lineMap[Math.min(lineMap.length - 1, children.length - 1)] ?? 1;
     if (_debugLog) console.log('[getFirstVisible] fallback result:', fallback, 'lineMap.length:', lineMap.length);
     return fallback;
 }
 
-// ── 图片上传：pending promise map ────────────────────
+// ── Image upload: pending promise map ────────────────────
 type UploadCallbacks = {
     resolve: (url: string) => void;
     reject: (e: Error) => void;
 };
 const _pendingUploads = new Map<string, UploadCallbacks>();
 
-// ── 获取项目图片列表：pending promise map ────────────
+// ── Get project image list: pending promise map ────────────
 type GetImagesCallbacks = {
     resolve: (
         images: Array<{
@@ -139,7 +139,7 @@ type GetImagesCallbacks = {
 };
 const _pendingGetImages = new Map<string, GetImagesCallbacks>();
 
-// ── 图片重命名：pending promise map ──────────────────
+// ── Image rename: pending promise map ──────────────────
 type RenameCallbacks = { resolve: () => void; reject: (e: Error) => void };
 const _pendingRenames = new Map<string, RenameCallbacks>();
 
@@ -224,7 +224,7 @@ async function handleImageFile(file: File, altText: string): Promise<string> {
                 reject(new Error("Upload timed out"));
             }
         }, 30000);
-        // 读取文件为 Uint8Array 后发送给 Extension
+        // Read the file as a Uint8Array and send it to the extension
         const reader = new FileReader();
         reader.onload = () => {
             const data = new Uint8Array(reader.result as ArrayBuffer);
@@ -257,14 +257,14 @@ function insertImageNode(src: string, alt: string): void {
     });
 }
 
-// 初始化目录面板
+// Initialize the TOC panel
 const toc = initToc(() => getEditorView());
 document.body.appendChild(toc.panel);
 
-// 初始化查找栏
+// Initialize the find bar
 const findBar = initFindBar(() => document.getElementById("editor"));
 
-/** 解析 YAML frontmatter 字符串为 key-value 数组 */
+/** Parse a YAML frontmatter string into a key-value array */
 function parseFrontmatter(raw: string): { key: string; value: string }[] {
     return raw
         .split('\n')
@@ -279,7 +279,7 @@ function parseFrontmatter(raw: string): { key: string; value: string }[] {
         .filter(({ key }) => key.length > 0);
 }
 
-/** 在 #editor 前渲染 frontmatter 表格面板；无 frontmatter 时移除面板 */
+/** Render the frontmatter table panel before #editor; remove the panel when there is no frontmatter */
 function renderFrontmatterPanel(frontmatter: string | undefined): void {
     const existing = document.getElementById('frontmatter-panel');
     const editorEl = document.getElementById('editor');
@@ -306,7 +306,7 @@ function renderFrontmatterPanel(frontmatter: string | undefined): void {
     if (!existing) {
         editor?.parentNode?.insertBefore(panel, editor);
     }
-    // 有 frontmatter 面板时，editor 的顶部 padding 由面板承担，只保留间距
+    // When the frontmatter panel is present, the editor's top padding is handled by the panel; keep only a small gap
     if (editor) { editor.style.paddingTop = '16px'; }
 }
 
@@ -314,11 +314,13 @@ function escapeHtml(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/** Word 风格字数：CJK 字符逐字 + 非 CJK 连续串计 1 + 空格不计 */
+/** Word-style word count: each CJK character counts as 1, each non-CJK continuous string counts as 1, spaces don't count */
 function countWords(text: string): number {
     let count = 0;
     let inNonCjk = false;
-    const cjkRe = /[一-鿿㐀-䶿豈-﫿]/;
+    // \p{sc=Han} matches all Han script characters (CJK Unified Ideographs + Extensions + Compatibility)
+    // using Unicode property escapes — the standard, modern way to match CJK
+    const cjkRe = /\p{sc=Han}/u;
     for (const ch of text) {
         if (/\s/.test(ch)) {
             inNonCjk = false;
@@ -335,7 +337,7 @@ function countWords(text: string): number {
     return count;
 }
 
-/** 计算字数统计并通知 Extension 更新状态栏 */
+/** Compute the word count and notify the extension to update the status bar */
 function updateWordCount(): void {
     const view = getEditorView();
     if (!view) return;
@@ -352,7 +354,7 @@ async function initEditor(
     container: HTMLElement,
     markdown: string,
 ): Promise<void> {
-    // 销毁旧编辑器（revert 时使用）
+    // Destroy the old editor (used on revert)
     if (currentEditor) {
         currentEditor.destroy();
         currentEditor = null;
@@ -364,8 +366,8 @@ async function initEditor(
         markdown,
         (updated) => {
             notifyUpdate(updated);
-            toc.refresh(); // 内容变化时刷新目录（面板关闭时是 no-op）
-            updateWordCount(); // 更新字数统计
+            toc.refresh(); // Refresh the TOC on content change (no-op when the panel is collapsed)
+            updateWordCount(); // Update the word count
         },
         handleRenameImage,
         () => toc.toggle(),
@@ -390,17 +392,17 @@ async function initEditor(
         ro.observe(topBarEl);
     }
 
-    toc.updatePosition(); // 工具栏已就绪，更新 TOC 吸顶位置
-    toc.refresh(); // 编辑器初始化完成后刷新一次
-    toc.show();    // toolbar 就绪，显示 TOC 面板
-    updateWordCount(); // 编辑器初始化完成后统计一次
+    toc.updatePosition(); // Toolbar is ready; update the TOC's sticky position
+    toc.refresh(); // Refresh once after the editor is initialized
+    toc.show();    // Toolbar is ready; show the TOC panel
+    updateWordCount(); // Count once after the editor is initialized
 }
 
-// 链接 Hover 弹框（在 #editor 容器上监听）
+// Link hover popup (listening on the #editor container)
 const editorContainer = document.getElementById("editor");
 if (editorContainer) {
-	    // 阻止链接默认跳转 + Cmd/Ctrl+Click 打开 + 锚点跳转
-	    // 阻止链接默认跳转 + Ctrl/Cmd+Click 打开 + 锚点跳转
+	    // Prevent the link's default navigation + Cmd/Ctrl+Click to open + anchor jump
+	    // Prevent the link's default navigation + Ctrl/Cmd+Click to open + anchor jump
 	    editorContainer.addEventListener("click", (e) => {
 	        const anchor = (e.target as Element).closest("a");
 	        if (!anchor) return;
@@ -422,7 +424,7 @@ if (editorContainer) {
 	            else notifyOpenFile(clean);
 	        }
 	    }, true);
-		    // 滚动时关闭 link tooltip：先解除 hover 锁定，再隐藏
+		    // Close the link tooltip on scroll: release the hover lock first, then hide
 	    window.addEventListener("scroll", () => {
 	        document.querySelectorAll(
 	            ".milkdown-link-preview, .milkdown-link-edit"
@@ -434,7 +436,7 @@ if (editorContainer) {
 	            });
 	        });
 	    }, true);
-	    // 工具栏图片插入 → 弹出选择器（上传 + 项目图片库 + URL）
+	    // Toolbar image insert → pop up the picker (upload + project image library + URL)
     document.addEventListener('epytor:insertImage', () => {
         showImagePicker(
             (file) => {
@@ -455,7 +457,7 @@ if (editorContainer) {
             },
         );
     });
-    // 保留快速上传 file input（供拖拽和粘贴复用）
+    // Keep a fast-upload file input (reused by drag-and-drop and paste)
     const imgFileInput = document.createElement('input');
     imgFileInput.type = 'file'; imgFileInput.accept = 'image/*';
     imgFileInput.style.display = 'none';
@@ -468,7 +470,7 @@ if (editorContainer) {
     setupTopBarTooltips(editorContainer);
     setupTopBarBrand(editorContainer);
 
-    // 图片 lightbox：双击/Ctrl+Click 图片放大查看
+    // Image lightbox: double-click / Ctrl+Click an image to zoom in
     editorContainer.addEventListener("mousedown", (e) => {
         const img = (e.target as Element).closest<HTMLImageElement>(
             ".image-wrapper img",
@@ -481,13 +483,13 @@ if (editorContainer) {
         }
     });
 
-    // 点击 #editor 容器底部空白区域（内容最后一行以下）→ 光标移到文档末尾并聚焦
+    // Click the empty area below the last line of content in #editor → move the cursor to the end of the document and focus
     editorContainer.addEventListener("mousedown", (e) => {
         const view = getEditorView();
         if (!view) { return; }
-        // 点到 ProseMirror 内容区域内则不干预，让编辑器自己处理
+        // Do not interfere when clicking inside the ProseMirror content area; let the editor handle it
         if (view.dom.contains(e.target as Node)) { return; }
-        // 只响应内容最后一个块底部以下的点击（排除左/右/顶部 padding 区域）
+        // Only respond to clicks below the last content block (exclude left/right/top padding)
         const lastChild = view.dom.lastElementChild;
         if (!lastChild) { return; }
         const lastRect = lastChild.getBoundingClientRect();
@@ -499,7 +501,7 @@ if (editorContainer) {
         view.focus();
     });
 
-    // 拖放图片文件到编辑器
+    // Drag and drop image files into the editor
     editorContainer.addEventListener("dragover", (e) => {
         const items = e.dataTransfer?.items;
         if (
@@ -511,7 +513,7 @@ if (editorContainer) {
             e.preventDefault();
             e.stopPropagation();
         }
-    });
+    }, true);
 
     editorContainer.addEventListener("drop", (e) => {
         const files = e.dataTransfer?.files;
@@ -526,6 +528,7 @@ if (editorContainer) {
         }
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         handleImageFile(imageFile, "")
             .then((url) => {
                 insertImageNode(url, "");
@@ -533,10 +536,10 @@ if (editorContainer) {
             .catch((err: Error) =>
                 console.error("[ImageUpload] drop failed:", err),
             );
-    });
+    }, true);
 }
 
-// 粘贴图片（全局监听，优先处理图片，其他内容交给编辑器自身处理）
+// Paste image (capture phase: intercept image files before ProseMirror internal paste handler)
 document.addEventListener("paste", (e) => {
     const items = e.clipboardData?.items;
     if (!items) {
@@ -553,6 +556,8 @@ document.addEventListener("paste", (e) => {
         return;
     }
     e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
     handleImageFile(file, "")
         .then((url) => {
             insertImageNode(url, "");
@@ -560,13 +565,13 @@ document.addEventListener("paste", (e) => {
         .catch((err: Error) =>
             console.error("[ImageUpload] paste failed:", err),
         );
-});
+}, true);
 
 
-// ── 代码块复制 + 全屏 ───────────────────────────────────────────────────────
+// ── Code block copy + fullscreen ───────────────────────────────────────────────────────
 
 function enhanceCodeBlocks(container: HTMLElement): void {
-    // ── 复制按钮：点击后弹 ✔ 提示 ────────────────────────────────────
+    // ── Copy button: pop up a ✔ hint after clicking ────────────────────────────────────
     container.addEventListener('click', (e) => {
         const btn = (e.target as Element).closest('.copy-button') as HTMLElement | null;
         if (!btn) return;
@@ -577,7 +582,7 @@ function enhanceCodeBlocks(container: HTMLElement): void {
         }, 100);
     });
 
-    // ── 全屏按钮（纯 CSS 全屏方案，完全不操作或抽离 CodeMirror DOM 树）─────────────
+    // ── Fullscreen button (pure CSS fullscreen solution, does not touch or detach the CodeMirror DOM tree)─────────────
     const addFullscreenBtn = (block: Element): void => {
         const copyBtn = block.querySelector('.copy-button') as HTMLElement | null;
         if (copyBtn && !copyBtn.dataset.tip) { copyBtn.dataset.tip = '1'; applyTooltip(copyBtn, t('Copy Code')); }
@@ -626,13 +631,13 @@ function enhanceCodeBlocks(container: HTMLElement): void {
         btnGroup.appendChild(fsBtn);
     };
 
-    // 初次 + 后续代码块都加上全屏按钮
+    // Add the fullscreen button to both initial and later code blocks
     const scanBlocks = () => container.querySelectorAll('.milkdown-code-block').forEach(addFullscreenBtn);
     requestAnimationFrame(scanBlocks);
     new MutationObserver(() => requestAnimationFrame(scanBlocks))
         .observe(container, { childList: true, subtree: true });
 
-    // 语言搜索框键盘导航
+    // Keyboard navigation for the language search box
     container.addEventListener('keydown', (e) => {
         const input = e.target as HTMLElement;
         if (!input.closest('.search-box')) return;
@@ -662,7 +667,7 @@ function enhanceCodeBlocks(container: HTMLElement): void {
     });
 }
 
-/** 为 Crepe top-bar 按钮添加自定义 tooltip（i18n 翻译，无快捷键） */
+/** Add custom tooltips to the Crepe top-bar buttons (i18n translations, no shortcut hints) */
 function setupTopBarTooltips(container: HTMLElement): void {
     const TOOLTIP_MAP: Record<string, string> = {
         'toc': t('Table of Contents'),
@@ -707,7 +712,7 @@ function setupTopBarTooltips(container: HTMLElement): void {
         .observe(container, { childList: true, subtree: true });
 }
 
-/** 将 Lona 🩷 品牌标识注入为 top-bar 真实 flex 子元素（替代 CSS ::after） */
+/** Inject the Lona 🩷 brand badge as a real flex child of the top-bar (replacing CSS ::after) */
 function setupTopBarBrand(container: HTMLElement): void {
     const inject = () => {
         const topBar = container.querySelector('.milkdown-top-bar');
@@ -723,10 +728,10 @@ function setupTopBarBrand(container: HTMLElement): void {
 }
 
 registerSelectionChangeHandler((_view) => {
-    // 选区变更回调保留，供后续扩展使用
+    // Selection-change callback kept for future extension
 });
 
-// Cmd/Ctrl+F：打开查找栏（预填当前选区文字）
+// Cmd/Ctrl+F: open the find bar (prefilled with the current selection text)
 window.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.code === "KeyF" && !e.shiftKey) {
         e.preventDefault();
@@ -744,7 +749,7 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
-// Cmd/Ctrl+Shift+M：切换到文本编辑器（附带当前视口顶部行号，供文本编辑器定位）
+// Cmd/Ctrl+Shift+M: switch to the text editor (carries the current viewport top line for the text editor to position on)
 window.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyM") {
         e.preventDefault();
@@ -754,7 +759,7 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
-// Cmd/Ctrl+Z (Undo) 和 Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (Redo) 全局拦截，确保绝对可靠响应
+// Globally intercept Cmd/Ctrl+Z (Undo) and Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y (Redo) to guarantee reliable response
 window.addEventListener(
     "keydown",
     (e) => {
@@ -788,11 +793,11 @@ window.addEventListener(
     true
 );
 
-// WebView 加载完成，通知 Extension 侧发送初始内容
+// WebView is loaded; notify the extension to send the initial content
 notifyReady();
 
-// ── 滚动位置持久化 ────────────────────────────────────────────
-// 保存：滚动时防抖写入 VSCode WebView 状态（跨会话可恢复）
+// ── Scroll position persistence ────────────────────────────────────────────
+// Save: write to the VSCode WebView state on scroll with debounce (recoverable across sessions)
 let _scrollSaveTimer: ReturnType<typeof setTimeout> | null = null;
 window.addEventListener('scroll', () => {
     if (_scrollSaveTimer) clearTimeout(_scrollSaveTimer);
@@ -802,8 +807,8 @@ window.addEventListener('scroll', () => {
     }, 200);
 }, { passive: true });
 
-// 恢复（主路径）：tab 切换时 iframe 被隐藏再显示，浏览器会重置 scrollY
-// visibilitychange 触发时读取已保存位置并还原
+// Restore (main path): when a tab is switched, the iframe is hidden then shown, and the browser resets scrollY
+// On visibilitychange, read the saved position and restore it
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const state = getWebviewState();
@@ -815,7 +820,7 @@ document.addEventListener('visibilitychange', () => {
 });
 // ─────────────────────────────────────────────────────────────
 
-// 监听来自 Extension 侧的消息
+// Listen for messages from the extension
 onMessage(async (msg) => {
     const container = document.getElementById("editor");
     if (!container) {
@@ -823,21 +828,21 @@ onMessage(async (msg) => {
     }
 
     if (msg.type === "init" || msg.type === "revert") {
-        markdownSource = msg.content; // 保存原始内容，供行号搜索使用
+        markdownSource = msg.content; // Save the original content for line number lookup
         currentLineMap = msg.lineMap ?? [];
         renderFrontmatterPanel(msg.frontmatter);
         if (msg.imageUriMap) { setImageUriMap(msg.imageUriMap); }
         await initEditor(container, msg.content);
-        // 新 WebView 打开时主动获取 DOM 焦点。
-        // 若不调用：旧 WebView（path-link-test.md）在 Cmd+Click 后 blur() 释放了焦点，
-        // 但新 WebView（README.md）的 iframe 未必自动获得焦点；
-        // VS Code 可能仍将 Cmd+W 路由到旧 iframe，导致两个 .md 标签都被关闭。
-        // init 仅在首次打开时触发（revert 是内容变更），此处只对首次打开生效。
+        // Actively grab DOM focus when a new WebView opens.
+        // If we don't: the old WebView (path-link-test.md) released focus via blur() after Cmd+Click,
+        // but the new WebView (README.md)'s iframe may not automatically gain focus;
+        // VS Code may still route Cmd+W to the old iframe, causing both .md tabs to close.
+        // init is only triggered on first open (revert is a content change); this only applies to the first open.
         if (msg.type === "init") {
             window.focus();
         }
-        // 全局搜索导航或切换回预览时，滚动到指定源码行
-        // Milkdown 渲染 + 浏览器布局需要时间，多次重试确保 DOM 就绪后才滚动
+        // When global search navigates or the user switches back to preview, scroll to the specified source line
+        // Milkdown rendering + browser layout takes time, so retry multiple times to make sure the DOM is ready before scrolling
         if (msg.type === "init" && msg.scrollToLine) {
             const targetLine = msg.scrollToLine;
             let scrollDone = false;
@@ -845,18 +850,18 @@ onMessage(async (msg) => {
                 if (scrollDone) { return; }
                 const view = getEditorView();
                 if (!view) { return; }
-                // 检查第一个块的 DOM 高度：若为 0 说明布局尚未完成
+                // Check the first block's DOM height: a value of 0 means layout hasn't completed yet
                 const firstChild = view.dom.children[0] as HTMLElement | undefined;
                 if (!firstChild || firstChild.getBoundingClientRect().height === 0) { return; }
                 scrollToSourceLine(view, currentLineMap, targetLine);
                 scrollDone = true;
             };
-            // 300ms 首试（Milkdown 渲染需要时间），若失败则在 600ms / 1100ms / 2000ms 继续重试
+            // First try at 300ms (Milkdown rendering takes time); if it fails, retry at 600ms / 1100ms / 2000ms
             for (const delay of [300, 600, 1100, 2000]) {
                 setTimeout(tryScroll, delay);
             }
         } else if (msg.type === "init") {
-            // WebView 重建场景（VSCode 重启恢复标签页等）：从持久状态恢复滚动位置
+            // WebView rebuild scenarios (VSCode restart restoring tabs, etc.): restore scroll position from persisted state
             const saved = getWebviewState();
             if (saved?.scrollY) {
                 const targetY = saved.scrollY as number;
@@ -876,14 +881,14 @@ onMessage(async (msg) => {
             }
         }
     } else if (msg.type === "requestSwitchToTextEditor") {
-        // 来自菜单按钮/命令面板的"切换到文本编辑器"请求
-        // 与 Cmd+Shift+M 快捷键逻辑相同：先获取当前可见行再通知 Extension
+        // "Switch to text editor" request from the menu button / command palette
+        // Same logic as the Cmd+Shift+M shortcut: get the current visible line first, then notify the extension
         const view = getEditorView();
         const line = view ? getFirstVisibleSourceLine(view, currentLineMap) : undefined;
         notifySwitchToTextEditor(line);
     } else if (msg.type === "scrollToLine") {
-        // 面板已打开时（如全局搜索点击已打开文件）直接滚动
-        // 若 initEditor 正在重建（getEditorView 返回 null），最多重试 8 次
+        // When the panel is already open (e.g. a global search click opened the file), scroll directly
+        // If initEditor is currently rebuilding (getEditorView returns null), retry at most 8 times
         const scrollLine = msg.line;
         let scrollAttempts = 0;
         const tryScrollNow = () => {
@@ -925,7 +930,7 @@ onMessage(async (msg) => {
             _pendingRenames.delete(msg.id);
             cb.resolve();
         }
-        // 更新 ProseMirror 文档中对应图片节点的 src
+        // Update the src of the corresponding image node in the ProseMirror document
         const editor = currentEditor;
         if (editor) {
             editor.action((ctx) => {
