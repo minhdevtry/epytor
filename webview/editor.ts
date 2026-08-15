@@ -127,11 +127,7 @@ const commonCodeLanguages = allLanguages.filter((l) =>
     l.alias.some((a) => COMMON_LANGS.has(a.toLowerCase()))
 );
 
-// Ensure curl alias is mapped to Shell mode
-const shellLang = commonCodeLanguages.find((l) => l.name.toLowerCase() === "shell");
-if (shellLang && !shellLang.alias.includes("curl")) {
-    shellLang.alias.push("curl");
-}
+const shellLang = allLanguages.find((l) => l.name.toLowerCase() === "shell");
 
 const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
@@ -139,6 +135,11 @@ const codeLanguages: LanguageDescription[] = [
         alias: ["text", "plaintext", "txt"],
         extensions: ["txt"],
         load: async () => undefined as unknown as LanguageSupport,
+    }),
+    LanguageDescription.of({
+        name: "cURL",
+        alias: ["curl"],
+        load: () => (shellLang ? shellLang.load() : Promise.resolve(undefined as unknown as LanguageSupport)),
     }),
     ...commonCodeLanguages,
     LanguageDescription.of({
