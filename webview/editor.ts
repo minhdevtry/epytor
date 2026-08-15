@@ -32,7 +32,7 @@ import type { Ctx } from "@milkdown/kit/ctx";
 import { CrepeBuilder } from "@milkdown/crepe";
 import { linkTooltip } from "@milkdown/crepe/feature/link-tooltip";
 import { blockEdit } from "@milkdown/crepe/feature/block-edit";
-import { TbUndo, TbRedo, TbImage, TbEraser, TbGear, TbToc } from "./ui/icons";
+import { TbUndo, TbRedo, TbImage, TbEraser, TbGear, TbToc, TbHighlighter } from "./ui/icons";
 
 // 调试日志开关（由 index.ts setDebugMode 消息驱动）
 let logTableSel = false;
@@ -684,6 +684,124 @@ export async function createEditor(
         });
     });
 
+    // ─── Highlight Color Palette Popover ─────────────────────────
+    function showHighlightColorPalette(anchorEl: HTMLElement | null, ctx: Ctx) {
+        const existing = document.querySelector(".highlight-color-picker-popover");
+        if (existing) {
+            existing.remove();
+            return;
+        }
+
+        const popover = document.createElement("div");
+        popover.className = "highlight-color-picker-popover";
+
+        const colors = [
+            { label: "Vàng (Yellow)", color: "rgba(250, 204, 21, 0.45)", hex: "#fde047" },
+            { label: "Xanh lá (Green)", color: "rgba(74, 222, 128, 0.45)", hex: "#4ade80" },
+            { label: "Xanh dương (Blue)", color: "rgba(96, 165, 250, 0.45)", hex: "#60a5fa" },
+            { label: "Hồng (Pink)", color: "rgba(244, 114, 182, 0.45)", hex: "#f472b6" },
+            { label: "Tím (Purple)", color: "rgba(192, 132, 252, 0.45)", hex: "#c084fc" },
+            { label: "Cam (Orange)", color: "rgba(251, 146, 60, 0.45)", hex: "#fb923c" },
+            { label: "Đỏ (Red)", color: "rgba(248, 113, 113, 0.45)", hex: "#f87171" },
+        ];
+
+        const swatchesHtml = colors
+            .map(
+                (c) =>
+                    `<button type="button" class="hl-color-swatch" data-color="${c.color}" title="${c.label}" style="background-color: ${c.hex};"></button>`
+            )
+            .join("");
+
+        popover.innerHTML = `
+            <div class="hl-swatches-title">Chọn màu Highlight</div>
+            <div class="hl-swatches">${swatchesHtml}</div>
+            <div class="hl-custom-row">
+                <label class="hl-custom-label">
+                    <input type="color" class="hl-custom-input" value="#fde047" title="Tự chọn màu tùy ý" />
+                    <span>Tùy chọn</span>
+                </label>
+                <button type="button" class="hl-clear-btn" title="Bỏ Highlight">🚫 Xóa</button>
+            </div>
+        `;
+
+        document.body.appendChild(popover);
+
+        if (anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            popover.style.top = `${rect.bottom + 6}px`;
+            popover.style.left = `${Math.max(10, Math.min(window.innerWidth - 240, rect.left - 40))}px`;
+        } else {
+            popover.style.top = `60px`;
+            popover.style.left = `50%`;
+            popover.style.transform = `translateX(-50%)`;
+        }
+
+        const apply = (color: string | null) => {
+            const view = ctx.get(editorViewCtx);
+            const { state } = view;
+            const { from, to, empty } = state.selection;
+
+            if (empty) {
+                if (color) {
+                    const text = `<mark style="background-color: ${color};">highlight</mark>`;
+                    const tr = state.tr.insertText(text, from, to);
+                    view.dispatch(tr);
+                }
+            } else {
+                const rawText = state.doc.textBetween(from, to);
+                const cleaned = rawText.replace(/<mark(?:\s+[^>]*)?>|<\/mark>/gi, "");
+                const replacement = color ? `<mark style="background-color: ${color};">${cleaned}</mark>` : cleaned;
+                const tr = state.tr.insertText(replacement, from, to);
+                view.dispatch(tr);
+            }
+            view.focus();
+            close();
+        };
+
+        popover.querySelectorAll(".hl-color-swatch").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const color = (btn as HTMLElement).dataset.color || null;
+                apply(color);
+            });
+        });
+
+        const customInput = popover.querySelector<HTMLInputElement>(".hl-custom-input");
+        customInput?.addEventListener("change", (e) => {
+            e.stopPropagation();
+            const hex = customInput.value;
+            apply(hex);
+        });
+
+        popover.querySelector(".hl-clear-btn")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            apply(null);
+        });
+
+        const close = () => {
+            document.removeEventListener("click", onDocClick);
+            document.removeEventListener("keydown", onKeyDown);
+            if (popover.parentNode) popover.parentNode.removeChild(popover);
+        };
+
+        const onDocClick = (e: MouseEvent) => {
+            if (!popover.contains(e.target as Node) && e.target !== anchorEl && !anchorEl?.contains(e.target as Node)) {
+                close();
+            }
+        };
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") close();
+        };
+
+        setTimeout(() => {
+            document.addEventListener("click", onDocClick);
+            document.addEventListener("keydown", onKeyDown);
+        }, 10);
+    }
+
     // ─── Video & YouTube Prompt Dialog ───────────────────────────
     function promptVideoInsert(type: "youtube" | "video", ctx: Ctx) {
         const overlay = document.createElement("div");
@@ -1052,6 +1170,13 @@ export async function createEditor(
                         });
                     },
                 });
+                mediaGroup.addItem('highlight-text', {
+                    label: 'Highlight (Tô màu văn bản)',
+                    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 2-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 0"/><path d="m18 6 3 3"/></svg>`,
+                    onRun: (ctx) => {
+                        showHighlightColorPalette(null, ctx);
+                    },
+                });
             },
         })
         .addFeature(topBar, {
@@ -1125,6 +1250,15 @@ export async function createEditor(
                         });
                         if (linkType) tr.removeMark(from, to, linkType);
                         v.dispatch(tr);
+                    },
+                });
+                // Highlight Color Palette — formatting 组
+                builder.getGroup('formatting').addItem('highlight-color', {
+                    icon: TbHighlighter,
+                    active: () => false,
+                    onRun: (ctx) => {
+                        const btn = document.querySelector('[data-key="highlight-color"]') as HTMLElement | null;
+                        showHighlightColorPalette(btn, ctx);
                     },
                 });
                 // 图片 — insert 组，link 和 table 之间（清空后按序重建）
