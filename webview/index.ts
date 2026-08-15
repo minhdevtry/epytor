@@ -370,9 +370,19 @@ async function initEditor(
         markdown,
         (updated) => {
             notifyUpdate(updated);
-            toc.refresh(); // Refresh the TOC on content change (no-op when the panel is collapsed)
-            stickyHeading.update(); // Refresh sticky heading
-            updateWordCount(); // Update the word count
+            if (typeof window.requestIdleCallback === "function") {
+                window.requestIdleCallback(() => {
+                    toc.refresh();
+                    stickyHeading.update();
+                    updateWordCount();
+                });
+            } else {
+                setTimeout(() => {
+                    toc.refresh();
+                    stickyHeading.update();
+                    updateWordCount();
+                }, 16);
+            }
         },
         handleRenameImage,
         () => toc.toggle(),
@@ -398,11 +408,19 @@ async function initEditor(
         ro.observe(topBarEl);
     }
 
-    toc.updatePosition(); // Toolbar is ready; update the TOC's sticky position
-    toc.refresh(); // Refresh once after the editor is initialized
-    toc.show();    // Toolbar is ready; show the TOC panel
-    stickyHeading.update(); // Update sticky heading on init
-    updateWordCount(); // Count once after the editor is initialized
+    // Defer secondary UI tasks to idle time to make editor visible instantly
+    const scheduleInitTasks = () => {
+        toc.updatePosition();
+        toc.refresh();
+        toc.show();
+        stickyHeading.update();
+        updateWordCount();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(scheduleInitTasks);
+    } else {
+        setTimeout(scheduleInitTasks, 10);
+    }
 }
 
 // Link hover popup (listening on the #editor container)
@@ -800,8 +818,78 @@ window.addEventListener(
     true
 );
 
-// WebView is loaded; notify the extension to send the initial content
-notifyReady();
+async function bootstrapInitialView(data: {
+    content: string;
+    lineMap?: number[];
+    frontmatter?: string;
+    imageUriMap?: Record<string, string>;
+    scrollToLine?: number;
+}): Promise<void> {
+    const container = document.getElementById("editor");
+    if (!container) return;
+
+    markdownSource = data.content;
+    currentLineMap = data.lineMap ?? [];
+    renderFrontmatterPanel(data.frontmatter);
+    if (data.imageUriMap) { setImageUriMap(data.imageUriMap); }
+    await initEditor(container, data.content);
+    window.focus();
+
+    if (data.scrollToLine) {
+        const targetLine = data.scrollToLine;
+        let scrollDone = false;
+        const tryScroll = () => {
+            if (scrollDone) return;
+            const view = getEditorView();
+            if (!view) return;
+            const firstChild = view.dom.children[0] as HTMLElement | undefined;
+            if (!firstChild || firstChild.getBoundingClientRect().height === 0) return;
+            scrollToSourceLine(view, currentLineMap, targetLine);
+            scrollDone = true;
+        };
+        for (const delay of [100, 300, 600, 1100, 2000]) {
+            setTimeout(tryScroll, delay);
+        }
+    } else {
+        const saved = getWebviewState();
+        if (saved?.scrollY) {
+            const targetY = saved.scrollY as number;
+            let restoreDone = false;
+            const tryRestore = () => {
+                if (restoreDone) return;
+                const view = getEditorView();
+                if (!view) return;
+                const firstChild = view.dom.children[0] as HTMLElement | undefined;
+                if (!firstChild || firstChild.getBoundingClientRect().height === 0) return;
+                window.scrollTo({ top: targetY });
+                restoreDone = true;
+            };
+            for (const delay of [100, 300, 600, 1100, 2000]) {
+                setTimeout(tryRestore, delay);
+            }
+        }
+    }
+}
+
+// Check for zero-handshake injected initial data in DOM
+let hasBootstrapped = false;
+const initDataEl = document.getElementById("epytor-init-data");
+if (initDataEl && initDataEl.textContent && initDataEl.textContent.trim().length > 0) {
+    try {
+        const initData = JSON.parse(initDataEl.textContent);
+        if (initData && initData.content !== undefined) {
+            hasBootstrapped = true;
+            bootstrapInitialView(initData);
+        }
+    } catch (e) {
+        console.error("Failed to parse initial data", e);
+    }
+}
+
+// Fallback: if not pre-injected, notify extension host
+if (!hasBootstrapped) {
+    notifyReady();
+}
 
 // ── Scroll position persistence ────────────────────────────────────────────
 // Save: write to the VSCode WebView state on scroll with debounce (recoverable across sessions)
@@ -835,58 +923,11 @@ onMessage(async (msg) => {
     }
 
     if (msg.type === "init" || msg.type === "revert") {
-        markdownSource = msg.content; // Save the original content for line number lookup
-        currentLineMap = msg.lineMap ?? [];
-        renderFrontmatterPanel(msg.frontmatter);
-        if (msg.imageUriMap) { setImageUriMap(msg.imageUriMap); }
-        await initEditor(container, msg.content);
-        // Actively grab DOM focus when a new WebView opens.
-        // If we don't: the old WebView (path-link-test.md) released focus via blur() after Cmd+Click,
-        // but the new WebView (README.md)'s iframe may not automatically gain focus;
-        // VS Code may still route Cmd+W to the old iframe, causing both .md tabs to close.
-        // init is only triggered on first open (revert is a content change); this only applies to the first open.
-        if (msg.type === "init") {
-            window.focus();
+        if (msg.type === "init" && hasBootstrapped && msg.content === markdownSource) {
+            // Already bootstrapped directly from injected DOM data
+            return;
         }
-        // When global search navigates or the user switches back to preview, scroll to the specified source line
-        // Milkdown rendering + browser layout takes time, so retry multiple times to make sure the DOM is ready before scrolling
-        if (msg.type === "init" && msg.scrollToLine) {
-            const targetLine = msg.scrollToLine;
-            let scrollDone = false;
-            const tryScroll = () => {
-                if (scrollDone) { return; }
-                const view = getEditorView();
-                if (!view) { return; }
-                // Check the first block's DOM height: a value of 0 means layout hasn't completed yet
-                const firstChild = view.dom.children[0] as HTMLElement | undefined;
-                if (!firstChild || firstChild.getBoundingClientRect().height === 0) { return; }
-                scrollToSourceLine(view, currentLineMap, targetLine);
-                scrollDone = true;
-            };
-            // First try at 300ms (Milkdown rendering takes time); if it fails, retry at 600ms / 1100ms / 2000ms
-            for (const delay of [300, 600, 1100, 2000]) {
-                setTimeout(tryScroll, delay);
-            }
-        } else if (msg.type === "init") {
-            // WebView rebuild scenarios (VSCode restart restoring tabs, etc.): restore scroll position from persisted state
-            const saved = getWebviewState();
-            if (saved?.scrollY) {
-                const targetY = saved.scrollY as number;
-                let restoreDone = false;
-                const tryRestore = () => {
-                    if (restoreDone) return;
-                    const view = getEditorView();
-                    if (!view) return;
-                    const firstChild = view.dom.children[0] as HTMLElement | undefined;
-                    if (!firstChild || firstChild.getBoundingClientRect().height === 0) return;
-                    window.scrollTo({ top: targetY });
-                    restoreDone = true;
-                };
-                for (const delay of [300, 600, 1100, 2000]) {
-                    setTimeout(tryRestore, delay);
-                }
-            }
-        }
+        await bootstrapInitialView(msg);
     } else if (msg.type === "requestSwitchToTextEditor") {
         // "Switch to text editor" request from the menu button / command palette
         // Same logic as the Cmd+Shift+M shortcut: get the current visible line first, then notify the extension

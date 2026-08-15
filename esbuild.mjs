@@ -30,10 +30,11 @@ const webviewBuild = {
     platform: 'browser',
     target: 'es2020',
     format: 'esm',
+    splitting: true,
     loader: {
-        '.ttf': 'dataurl',
-        '.woff': 'dataurl',
-        '.woff2': 'dataurl',
+        '.ttf': 'empty',
+        '.woff': 'empty',
+        '.woff2': 'empty',
     },
     alias: {
         '@': path.resolve('./webview'),

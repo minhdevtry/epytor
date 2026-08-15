@@ -205,7 +205,22 @@ export class MarkdownEditorProvider
                 vscode.Uri.joinPath(document.uri, '..'),
             ],
         };
-        webviewPanel.webview.html = this._getHtmlForWebview(webviewPanel.webview);
+
+        const uriMap = this._getOrCreateUriMap(uriKey);
+        const initContent = document.getText();
+        const displayContent = this._prepareContentForDisplay(initContent, document, webviewPanel, uriKey);
+        const scrollToLine = this._consumePendingNavigation(document.uri.fsPath)
+            ?? this._consumeGlobalRevealLine();
+        const initialData = {
+            content: displayContent,
+            lineMap: computeLineMap(initContent),
+            frontmatter: this._frontmatterMap.get(uriKey) || undefined,
+            imageUriMap: Object.fromEntries(uriMap),
+            ...(scrollToLine !== undefined ? { scrollToLine } : {}),
+        };
+        this._initializedPanels.add(uriKey);
+
+        webviewPanel.webview.html = this._getHtmlForWebview(webviewPanel.webview, initialData);
 
         webviewPanel.onDidChangeViewState(({ webviewPanel: p }) => {
             if (!p.active) {
@@ -550,7 +565,7 @@ export class MarkdownEditorProvider
         return document.backup(context.destination, cancellation);
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview): string {
+    private _getHtmlForWebview(webview: vscode.Webview, initialData?: any): string {
         const cfg = vscode.workspace.getConfiguration("epytor");
         const maxHeight = cfg.get<number>("codeBlockMaxHeight", 500);
         const editorMaxWidth = cfg.get<number>("editorMaxWidth", 900);
@@ -570,6 +585,7 @@ export class MarkdownEditorProvider
         const debugMode = cfg.get<boolean>("debugMode", false);
         const tableWrapMode = cfg.get<string>("tableWrapMode", "wrap");
         const i18nScript = `window.__i18n=${JSON.stringify({ translations, isMac, debugMode, tableWrapMode })};`;
+        const initialDataJson = initialData ? JSON.stringify(initialData).replace(/</g, '\\u003c') : '';
 
         return `<!DOCTYPE html>
 <html lang="${vscode.env.language}">
@@ -593,6 +609,7 @@ export class MarkdownEditorProvider
   <div class="editor-topbar"></div>
   <div id="editor"></div>
   <script nonce="${nonce}">${i18nScript}</script>
+  <script id="epytor-init-data" type="application/json" nonce="${nonce}">${initialDataJson}</script>
   <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

@@ -32,10 +32,9 @@ import { Compartment } from "@codemirror/state";
 import { EditorView as CMEditorView } from "@codemirror/view";
 import { HighlightStyle, syntaxHighlighting, LanguageDescription, type LanguageSupport } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
-import { languages as allCodeLanguages } from "@codemirror/language-data";
-import mermaid from "mermaid";
+import { languages as allLanguages } from "@codemirror/language-data";
 import { onThemeChange } from "./utils/themeBus";
-import { getMermaidConfig } from "./utils/mermaidThemes";
+import { renderMermaidSvg, reinitializeMermaidTheme } from "./utils/mermaidService";
 import { copyPngToClipboard } from "./utils/mermaidExport";
 import { t } from "./i18n";
 import {
@@ -85,13 +84,55 @@ import { createImageView } from "./components/imageView";
 
 export { registerSelectionChangeHandler };
 
-// Debug log switch
+// Diagnostic logging flag, synchronized from the debugMode setting
+let _debugLog = false;
+export function setDebugLog(enabled: boolean): void {
+    _debugLog = enabled;
+}
+
+// Table cell single-click debug logging flag
 let logTableSel = false;
 export function setLogTableSel(enabled: boolean): void {
     logTableSel = enabled;
 }
 
-// Complete language list supporting syntax highlighting for all major programming languages
+// Common language filter to keep bundle lightweight while ensuring fast on-demand syntax highlighting
+const COMMON_LANGS = new Set([
+    "javascript",
+    "typescript",
+    "jsx",
+    "tsx",
+    "json",
+    "yaml",
+    "sql",
+    "python",
+    "shell",
+    "bash",
+    "sh",
+    "html",
+    "css",
+    "markdown",
+    "xml",
+    "c",
+    "c++",
+    "cpp",
+    "go",
+    "rust",
+    "java",
+    "php",
+]);
+
+const commonCodeLanguages = allLanguages.filter((l) =>
+    COMMON_LANGS.has(l.name.toLowerCase()) ||
+    l.alias.some((a) => COMMON_LANGS.has(a.toLowerCase()))
+);
+
+// Ensure curl alias is mapped to Shell mode
+const shellLang = commonCodeLanguages.find((l) => l.name.toLowerCase() === "shell");
+if (shellLang && !shellLang.alias.includes("curl")) {
+    shellLang.alias.push("curl");
+}
+
 const codeLanguages: LanguageDescription[] = [
     LanguageDescription.of({
         name: "Text",
@@ -99,10 +140,10 @@ const codeLanguages: LanguageDescription[] = [
         extensions: ["txt"],
         load: async () => undefined as unknown as LanguageSupport,
     }),
-    ...allCodeLanguages,
+    ...commonCodeLanguages,
     LanguageDescription.of({
         name: "Mermaid",
-        alias: ["mermaid"],
+        alias: ["mermaid", "mmd"],
         extensions: ["mmd"],
         load: async () => undefined as unknown as LanguageSupport,
     }),
@@ -337,13 +378,6 @@ export async function createEditor(
     const mermaidCodeMap = new Map<string, string>();
     let mermaidSeq = 0;
 
-    mermaid.initialize(getMermaidConfig(isDark));
-
-    const renderMermaid = (code: string): Promise<string> => {
-        const id = "mermaid-" + Math.random().toString(36).slice(2, 8);
-        return mermaid.render(id, code).then(({ svg }) => svg);
-    };
-
     const attachMermaidInteractions = (svgTarget: HTMLElement) => {
         const svgEl = svgTarget.querySelector<SVGSVGElement>("svg");
         if (!svgEl) return;
@@ -371,11 +405,11 @@ export async function createEditor(
 
     onThemeChange((dark) => {
         isDark = dark;
-        mermaid.initialize(getMermaidConfig(dark));
+        reinitializeMermaidTheme(dark).catch(() => {});
         mermaidCodeMap.forEach((code, key) => {
             const el = document.querySelector<HTMLElement>(`[data-mermaid-key="${key}"]`);
             if (el) {
-                renderMermaid(code).then((svg) => {
+                renderMermaidSvg(code, dark).then((svg) => {
                     const svgTarget = el.querySelector<HTMLElement>(".mermaid-rendered-svg") || el;
                     svgTarget.innerHTML = svg;
                     attachMermaidInteractions(svgTarget);
@@ -405,7 +439,7 @@ export async function createEditor(
             </div>
         `);
         const el = () => document.querySelector(`[data-mermaid-key="${key}"]`);
-        renderMermaid(code).then((svg) => {
+        renderMermaidSvg(code, isDark).then((svg) => {
             const containerEl = el();
             if (containerEl) {
                 const svgTarget = containerEl.querySelector<HTMLElement>(".mermaid-rendered-svg");
