@@ -43,6 +43,7 @@ import { setImageUriMap, showGlobalLightbox } from "./components/imageView";
 import { initFindBar } from "./components/findBar";
 import { initHeadingIds } from "./headingIds";
 import { initToc } from "./components/toc";
+import { initStickyHeading } from "./components/stickyHeading";
 import type { Editor } from "@milkdown/kit/core";
 import { editorViewCtx } from "@milkdown/kit/core";
 import { applyTooltip } from "./ui/tooltip";
@@ -261,6 +262,9 @@ function insertImageNode(src: string, alt: string): void {
 const toc = initToc(() => getEditorView());
 document.body.appendChild(toc.panel);
 
+// Initialize sticky heading breadcrumb
+const stickyHeading = initStickyHeading(() => getEditorView());
+
 // Initialize the find bar
 const findBar = initFindBar(() => document.getElementById("editor"));
 
@@ -367,6 +371,7 @@ async function initEditor(
         (updated) => {
             notifyUpdate(updated);
             toc.refresh(); // Refresh the TOC on content change (no-op when the panel is collapsed)
+            stickyHeading.update(); // Refresh sticky heading
             updateWordCount(); // Update the word count
         },
         handleRenameImage,
@@ -388,6 +393,7 @@ async function initEditor(
         const ro = new ResizeObserver(() => {
             syncTopBarHeight();
             toc.updatePosition();
+            stickyHeading.update();
         });
         ro.observe(topBarEl);
     }
@@ -395,6 +401,7 @@ async function initEditor(
     toc.updatePosition(); // Toolbar is ready; update the TOC's sticky position
     toc.refresh(); // Refresh once after the editor is initialized
     toc.show();    // Toolbar is ready; show the TOC panel
+    stickyHeading.update(); // Update sticky heading on init
     updateWordCount(); // Count once after the editor is initialized
 }
 

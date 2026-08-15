@@ -290,6 +290,72 @@ body {
 .milkdown .ProseMirror h5 { font-size: 1em; }
 .milkdown .ProseMirror h6 { font-size: 0.9em; font-weight: 400; color: var(--vscode-descriptionForeground); }
 
+/* Heading fold button & collapsed indicators */
+.epytor-heading-fold-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
+    cursor: pointer;
+    opacity: 0.25;
+    color: var(--vscode-icon-foreground, currentColor);
+    border-radius: 4px;
+    transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.milkdown .ProseMirror h1:hover .epytor-heading-fold-btn,
+.milkdown .ProseMirror h2:hover .epytor-heading-fold-btn,
+.milkdown .ProseMirror h3:hover .epytor-heading-fold-btn,
+.milkdown .ProseMirror h4:hover .epytor-heading-fold-btn,
+.milkdown .ProseMirror h5:hover .epytor-heading-fold-btn,
+.milkdown .ProseMirror h6:hover .epytor-heading-fold-btn,
+.epytor-heading-fold-btn.is-collapsed {
+    opacity: 0.85;
+}
+
+.epytor-heading-fold-btn:hover {
+    opacity: 1 !important;
+    transform: scale(1.18);
+    color: var(--vscode-focusBorder, #007acc);
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15));
+}
+
+.epytor-folded-node {
+    display: none !important;
+}
+
+.epytor-folded-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 16px;
+    padding: 6px 14px;
+    background: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.08));
+    border: 1px dashed var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+    border-radius: 6px;
+    font-size: 0.84em;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.epytor-folded-indicator:hover {
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.18));
+    border-color: var(--vscode-focusBorder, #007acc);
+    color: var(--vscode-editor-foreground);
+}
+
+.epytor-folded-icon {
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.8;
+}
+
 /* Bold, italic */
 .milkdown .ProseMirror strong {
     color: var(--vscode-editor-foreground);
