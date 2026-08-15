@@ -13,16 +13,17 @@
 * [ ] **Wikilinks & Bi-directional page links (`[[page]]`)** — Auto-complete links to other Markdown files in the workspace with real-time preview.
 * [ ] **WYSIWYG Visual Diff for AI modifications** — Inline visual highlight of insertions/deletions when external AI extensions or Git edit markdown files.
 * [ ] **Interactive Mindmaps (Markmap)** — Render interactive mindmaps with collapsible nodes directly from nested Markdown lists.
-
-### Editor & Formatting Enhancements
-
-* [ ] **Sticky heading + collapse** — Current section's heading sticks under the top bar while scrolling long documents; sibling headings can be collapsed/expanded.
-* [ ] **Table wrap mode** — Support Shift+Enter soft wrap inside table cells, add the `epytor.tableWrapMode` setting.
-* [ ] **Text alignment** — Paragraphs/headings support left/center/right/justified alignment.
+* [ ] **Toolbar overflow menu** — Pop-up "More" dropdown when the editor window is narrow.
 
 ***
 
 ## v1.2.x ✅ (Released: v1.2.0)
+
+### Editor & Formatting Enhancements
+
+* [x] **Sticky heading + section collapse** — Current section's heading sticks under the top bar while scrolling long documents; sibling headings can be collapsed/expanded with smooth indicators.
+* [x] **Table wrap mode** — Support Shift+Enter soft wrap inside table cells, add the `epytor.tableWrapMode` setting (`wrap` / `nowrap`).
+* [x] **Text alignment** — Paragraphs/headings support left/center/right/justified alignment with live visual rendering in TopBar and Selection Toolbar.
 
 ### Cloud Storage & Media
 

@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - **Cloudflare R2 Image Storage**: S3-compatible AWS SigV4 zero-dependency direct upload with custom public domain and bucket path prefix support.
+- **Sticky Heading Title & Section Folding**: Glassmorphic sticky banner showing the active section while scrolling, with one-click return to section top; interactive fold/unfold button next to headings to collapse section bodies without altering document content.
+- **Table Wrap Mode (`epytor.tableWrapMode`)**: Configure whether table cells wrap text (`"wrap"`) or keep single lines with horizontal scrolling (`"nowrap"`), with `Shift+Enter` soft line breaks inside cells.
+- **Text Alignment (Left / Center / Right / Justify)**: Block-level alignment tools with live visual rendering in both TopBar and floating Selection Toolbar.
 - **Mermaid 2.0**:
   - Modern HSL theme palette dynamically adapting to VS Code light and dark themes.
   - Smooth Bezier curves (`curve: 'basis'`) replacing sharp polyline diagram edges.
