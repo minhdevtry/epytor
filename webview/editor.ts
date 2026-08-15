@@ -594,7 +594,7 @@ export async function createEditor(
                             const firstChild = node.firstChild;
                             if (firstChild && firstChild.type.name === "paragraph") {
                                 const text = firstChild.textContent || "";
-                                const match = text.match(/^\[!(NOTE|INFO|TIP|WARNING|CAUTION|DANGER|SUCCESS|IMPORTANT)\]/i);
+                                const match = text.match(/^\[!(NOTE|INFO|TIP|WARNING|CAUTION|DANGER|SUCCESS|IMPORTANT)\]\s*/i);
                                 if (match) {
                                     const rawType = match[1].toLowerCase();
                                     const type = rawType === "info" ? "note" : rawType === "danger" ? "caution" : rawType;
@@ -606,7 +606,7 @@ export async function createEditor(
                                     const tagLen = match[0].length;
                                     decos.push(
                                         Decoration.inline(pos + 2, pos + 2 + tagLen, {
-                                            class: `callout-tag-pill callout-tag-${type}`,
+                                            class: `callout-tag-hidden`,
                                         })
                                     );
                                 }
@@ -640,6 +640,9 @@ export async function createEditor(
                                 widget.className = "embedded-video-container";
                                 widget.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
                                 decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                if (node.nodeSize > 2) {
+                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
+                                }
                                 decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
                                 return;
                             }
@@ -652,6 +655,9 @@ export async function createEditor(
                                 widget.className = "embedded-video-container";
                                 widget.innerHTML = `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
                                 decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                if (node.nodeSize > 2) {
+                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
+                                }
                                 decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
                                 return;
                             }
@@ -664,6 +670,9 @@ export async function createEditor(
                                 widget.className = "embedded-video-container";
                                 widget.innerHTML = `<video src="${src}" controls></video>`;
                                 decos.push(Decoration.widget(pos + 1, widget, { side: -1 }));
+                                if (node.nodeSize > 2) {
+                                    decos.push(Decoration.inline(pos + 1, pos + node.nodeSize - 1, { class: "video-source-text-hidden" }));
+                                }
                                 decos.push(Decoration.node(pos, pos + node.nodeSize, { class: "video-block-node" }));
                                 return;
                             }
